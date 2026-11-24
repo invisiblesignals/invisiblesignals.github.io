@@ -99,6 +99,12 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
 .langs { display: flex; gap: 4px; }
 .langs button, .sndb { font-family: var(--f-data); font-size: 12px; color: var(--mute); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; cursor: pointer; }
 .langs button[aria-pressed="true"] { color: var(--night); background: var(--ink); border-color: var(--ink); }
+.intro .langs { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 16px); right: max(16px, env(safe-area-inset-right, 0px)); z-index: 2; flex-wrap: wrap; justify-content: flex-end; }
+.intro .belief { font-family: var(--f-display); font-style: italic; color: var(--ink); max-width: 46ch; font-size: clamp(15px, 1.9vw, 19px); line-height: 1.45; border-top: 1px solid var(--line); padding-top: 18px; margin-top: 6px; }
+.creed { margin: 4px 0 0; padding: 22px 24px; border-left: 3px solid var(--glow); background: rgba(255,207,90,.06); border-radius: 0 14px 14px 0; }
+.creed h3 { margin: 0 0 8px; font-family: var(--f-data); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--glow); font-weight: 600; }
+.creed p { margin: 0; font-family: var(--f-display); font-size: clamp(18px, 2.4vw, 24px); line-height: 1.4; text-wrap: pretty; }
+
 .sndb[aria-pressed="false"] { text-decoration: line-through; opacity: .6; }
 /* opening: one question on the night sky, a message crossing it */
 .intro { position: fixed; inset: 0; z-index: 20; background: radial-gradient(120% 90% at 50% 110%, #1a2550 0%, var(--night) 60%); display: grid; place-items: center; text-align: center;
@@ -170,11 +176,13 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
 
 <section class="intro" id="intro" aria-labelledby="introQ">
   <canvas class="sky" id="sky" aria-hidden="true"></canvas>
+  <div class="langs" id="langsI" role="group" aria-label="Idioma"></div>
   <div class="intro-in">
     <div class="eyebrow" data-i18n="introEye">Invisible Signals · o telefone sem fio da era digital</div>
     <h2 id="introQ"></h2>
     <p id="introSub"></p>
     <button class="go" id="introGo" type="button"></button>
+    <p class="belief" id="introBelief" data-i18n="belief"></p>
   </div>
 </section>
 
@@ -274,6 +282,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
       <div class="card"><h3 data-i18n="ab3h">O que medimos</h3><p data-i18n="ab3"></p></div>
       <div class="card"><h3 data-i18n="ab4h">O que guardamos</h3><p data-i18n="ab4"></p></div>
     </div>
+    <blockquote class="creed"><h3 data-i18n="creedH">No que acreditamos</h3><p data-i18n="creed"></p></blockquote>
   </section>
 
   <p class="note" id="note" data-i18n="note">Protótipo de teste do projeto Invisible Signals.</p>
@@ -345,7 +354,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
       ab1: "Uma frase, um ditado, um conselho ou uma lição de vida passa de pessoa em pessoa, de cidade em cidade, às vezes de língua em língua. Cada pessoa decide: passa igual, conta do seu jeito ou começa outra.",
       ab2: "É um teste do Invisible Signals, uma pesquisa sobre florescimento humano: o que faz uma vida ir bem, e o que as perguntas de sempre não conseguem ver. Uma das dúvidas é a língua: “feliz”, “happy” e “šťastný” querem dizer a mesma coisa? Aqui dá para ver uma frase atravessar línguas e mudar no caminho.",
       ab3: "Até onde uma frase chega, quantas vezes ela é passada igual ou recontada, em que línguas ela viaja e, se a pessoa quiser responder, o degrau de hoje na escada de 0 a 10, a mesma pergunta usada em grandes estudos internacionais. Depois vêm outras perguntas, uma de cada vez.",
-      ab4: "A frase, a cidade, a língua da página e, se você responder, o degrau da escada. Nada de nome, e-mail ou endereço. O degrau nunca aparece por pessoa, só em contagens e médias de grupos." },
+      belief: "Acreditamos que a vida é uma grande trama: cada pessoa, cada frase e cada lugar se encaixa num desenho que ninguém enxerga sozinho.", creedH: "No que acreditamos", creed: "Nada floresce sozinho. A vida é feita de fios invisíveis: uma frase dita em Goiânia pode mudar o dia de alguém em Praga. Cada pessoa é uma peça, e o desenho inteiro só aparece quando juntamos as peças. Este telefone sem fio é o nosso jeito de tornar esses fios visíveis.", ab4: "A frase, a cidade, a língua da página e, se você responder, o degrau da escada. Nada de nome, e-mail ou endereço. O degrau nunca aparece por pessoa, só em contagens e médias de grupos." },
     en: { eyebrow: "Invisible Signals · telephone game", h1a: "A sentence you would", h1em: "give the world", h1b: ", passed from hand to hand.",
       lede: "Write a saying, a piece of advice or something life taught you. Send the link to someone. Whoever receives it can pass it on as it is, retell it their own way or start a new one. On the globe, each message travels from the sender to the receiver.",
       leg1: "someone sent a message from this city", stN: "messages", stD: "links in the longest chain",
@@ -377,7 +386,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
       ab1: "A sentence, a saying, a piece of advice or a life lesson passes from person to person, city to city, sometimes language to language. Each person decides: pass it on as it is, retell it their way, or start a new one.",
       ab2: "It is a test by Invisible Signals, a research project on human flourishing: what makes a life go well, and what the usual questions miss. One open question is language: do “feliz”, “happy” and “šťastný” mean the same thing? Here you can watch a sentence cross languages and change along the way.",
       ab3: "How far a sentence goes, how often it is passed on unchanged or retold, which languages it travels through and, if people choose to answer, today's step on the 0–10 ladder, the same question used in large international studies. More questions will follow, one at a time.",
-      ab4: "The sentence, the city, the page language and, if you answer, your ladder step. No name, email or address. Your step is never shown per person, only in counts and group averages." },
+      belief: "We believe life is one great weave: every person, every sentence and every place fits into a pattern no one can see alone.", creedH: "What we believe", creed: "Nothing flourishes alone. Life is made of invisible threads: a sentence said in Goiânia can change someone's day in Prague. Each person is one piece, and the whole picture only appears when we put the pieces together. This telephone game is our way of making those threads visible.", ab4: "The sentence, the city, the page language and, if you answer, your ladder step. No name, email or address. Your step is never shown per person, only in counts and group averages." },
     fr: { eyebrow: "Invisible Signals · téléphone arabe", h1a: "Une phrase que vous", h1em: "offririez au monde", h1b: ", passée de main en main.",
       lede: "Écrivez un proverbe, un conseil ou quelque chose que la vie vous a appris. Envoyez le lien à quelqu'un. Qui le reçoit peut le transmettre tel quel, le raconter à sa façon ou commencer une autre phrase. Sur le globe, chaque message voyage de l'expéditeur au destinataire.",
       leg1: "quelqu'un a envoyé un message depuis cette ville", stN: "messages", stD: "maillons de la plus longue chaîne",
@@ -409,7 +418,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
       ab1: "Une phrase, un proverbe, un conseil ou une leçon de vie passe de personne en personne, de ville en ville, parfois de langue en langue. Chacun décide : la transmettre telle quelle, la raconter à sa façon ou en commencer une autre.",
       ab2: "C'est un test d'Invisible Signals, une recherche sur l'épanouissement humain : ce qui fait qu'une vie va bien, et ce que les questions habituelles ne voient pas. Une des questions ouvertes est la langue : « feliz », « happy » et « šťastný » veulent-ils dire la même chose ? Ici, on voit une phrase traverser les langues et changer en chemin.",
       ab3: "Jusqu'où une phrase va, combien de fois elle est transmise telle quelle ou reformulée, dans quelles langues elle voyage et, si la personne veut répondre, l'échelon du jour sur l'échelle de 0 à 10, la même question que dans les grandes études internationales. D'autres questions suivront, une à la fois.",
-      ab4: "La phrase, la ville, la langue de la page et, si vous répondez, votre échelon. Ni nom, ni e-mail, ni adresse. L'échelon n'est jamais affiché par personne, seulement en comptes et en moyennes de groupe." },
+      belief: "Nous croyons que la vie est une grande trame : chaque personne, chaque phrase et chaque lieu s'inscrit dans un dessin que personne ne voit seul.", creedH: "Ce en quoi nous croyons", creed: "Rien ne s'épanouit seul. La vie est faite de fils invisibles : une phrase dite à Goiânia peut changer la journée de quelqu'un à Prague. Chaque personne est une pièce, et le dessin entier n'apparaît que lorsque nous rassemblons les pièces. Ce téléphone arabe est notre façon de rendre ces fils visibles.", ab4: "La phrase, la ville, la langue de la page et, si vous répondez, votre échelon. Ni nom, ni e-mail, ni adresse. L'échelon n'est jamais affiché par personne, seulement en comptes et en moyennes de groupe." },
     es: { eyebrow: "Invisible Signals · teléfono descompuesto", h1a: "Una frase que", h1em: "le darías al mundo", h1b: ", pasando de mano en mano.",
       lede: "Escribe un refrán, un consejo o algo que la vida te enseñó. Manda el enlace a alguien. Quien lo recibe puede pasarlo igual, contarlo a su manera o empezar otra frase. En el globo, cada mensaje viaja de quien lo envió a quien lo recibió.",
       leg1: "alguien envió un mensaje desde esta ciudad", stN: "mensajes", stD: "eslabones en la cadena más larga",
@@ -441,7 +450,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
       ab1: "Una frase, un refrán, un consejo o una lección de vida pasa de persona en persona, de ciudad en ciudad, a veces de idioma en idioma. Cada persona decide: pasarla igual, contarla a su manera o empezar otra.",
       ab2: "Es una prueba de Invisible Signals, una investigación sobre el florecimiento humano: qué hace que una vida vaya bien y qué no ven las preguntas de siempre. Una de las dudas es el idioma: ¿“feliz”, “happy” y “šťastný” significan lo mismo? Aquí se puede ver una frase cruzar idiomas y cambiar en el camino.",
       ab3: "Hasta dónde llega una frase, cuántas veces se pasa igual o se recuenta, por qué idiomas viaja y, si la persona quiere responder, el escalón de hoy en la escalera de 0 a 10, la misma pregunta que usan grandes estudios internacionales. Después vendrán otras preguntas, una a la vez.",
-      ab4: "La frase, la ciudad, el idioma de la página y, si respondes, tu escalón. Nada de nombre, correo ni dirección. El escalón nunca se muestra por persona, solo en conteos y promedios de grupo." },
+      belief: "Creemos que la vida es una gran trama: cada persona, cada frase y cada lugar encaja en un dibujo que nadie ve solo.", creedH: "En qué creemos", creed: "Nada florece solo. La vida está hecha de hilos invisibles: una frase dicha en Goiânia puede cambiar el día de alguien en Praga. Cada persona es una pieza, y el dibujo completo solo aparece cuando juntamos las piezas. Este teléfono descompuesto es nuestra forma de hacer visibles esos hilos.", ab4: "La frase, la ciudad, el idioma de la página y, si respondes, tu escalón. Nada de nombre, correo ni dirección. El escalón nunca se muestra por persona, solo en conteos y promedios de grupo." },
     it: { eyebrow: "Invisible Signals · telefono senza fili", h1a: "Una frase che", h1em: "daresti al mondo", h1b: ", passata di mano in mano.",
       lede: "Scrivi un proverbio, un consiglio o qualcosa che la vita ti ha insegnato. Manda il link a qualcuno. Chi lo riceve può passarlo così com'è, raccontarlo a modo suo o iniziare un'altra frase. Sul globo, ogni messaggio viaggia da chi l'ha mandato a chi l'ha ricevuto.",
       leg1: "qualcuno ha mandato un messaggio da questa città", stN: "messaggi", stD: "anelli nella catena più lunga",
@@ -473,7 +482,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
       ab1: "Una frase, un proverbio, un consiglio o una lezione di vita passa di persona in persona, di città in città, a volte di lingua in lingua. Ognuno decide: passarla così com'è, raccontarla a modo suo o iniziarne un'altra.",
       ab2: "È un test di Invisible Signals, una ricerca sulla fioritura umana: cosa fa andare bene una vita, e cosa le solite domande non vedono. Una delle domande aperte è la lingua: “feliz”, “happy” e “šťastný” vogliono dire la stessa cosa? Qui si vede una frase attraversare le lingue e cambiare lungo la strada.",
       ab3: "Fin dove arriva una frase, quante volte viene passata uguale o raccontata di nuovo, in quali lingue viaggia e, se la persona vuole rispondere, il gradino di oggi sulla scala da 0 a 10, la stessa domanda usata nei grandi studi internazionali. Poi arriveranno altre domande, una alla volta.",
-      ab4: "La frase, la città, la lingua della pagina e, se rispondi, il tuo gradino. Niente nome, e-mail o indirizzo. Il gradino non viene mai mostrato per persona, solo in conteggi e medie di gruppo." }
+      belief: "Crediamo che la vita sia una grande trama: ogni persona, ogni frase e ogni luogo trova il suo posto in un disegno che nessuno vede da solo.", creedH: "In cosa crediamo", creed: "Niente fiorisce da solo. La vita è fatta di fili invisibili: una frase detta a Goiânia può cambiare la giornata di qualcuno a Praga. Ogni persona è un pezzo, e il disegno intero appare solo quando mettiamo insieme i pezzi. Questo telefono senza fili è il nostro modo di rendere visibili quei fili.", ab4: "La frase, la città, la lingua della pagina e, se rispondi, il tuo gradino. Niente nome, e-mail o indirizzo. Il gradino non viene mai mostrato per persona, solo in conteggi e medie di gruppo." }
   };
   const LANGS = [["pt", "PT"], ["en", "EN"], ["fr", "FR"], ["es", "ES"], ["it", "IT"]];
   let lang = "pt";
@@ -491,12 +500,12 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
     document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
     $("text").placeholder = t("textPh"); $("place").placeholder = t("placePh");
     [...$("modes").children].forEach(b => { b.textContent = t("m_" + b.dataset.v); });
-    [...$("langs").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.l === lang)));
+    [...$("langs").children, ...$("langsI").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.l === lang)));
     if (msgKey) $("msg").textContent = t(msgKey);
     $("snd").textContent = "♪ " + t("sound");
     renderIntro(); render();
   }
-  for (const [l, label] of LANGS) { const b = document.createElement("button"); b.type = "button"; b.dataset.l = l; b.textContent = label; b.onclick = () => { lang = l; try { localStorage.setItem("tsf-lang", l); } catch {} applyLang(); }; $("langs").appendChild(b); }
+  for (const [l, label] of LANGS) { const b = document.createElement("button"); b.type = "button"; b.dataset.l = l; b.textContent = label; b.onclick = () => { lang = l; try { localStorage.setItem("tsf-lang", l); } catch {} applyLang(); }; $("langs").appendChild(b); const bi = b.cloneNode(true); bi.onclick = b.onclick; $("langsI").appendChild(bi); }
   $("toAbout").onclick = () => $("about").scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
   const MAXLEN = 280;
 
@@ -941,6 +950,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-
     const after = 0.45 + i * 0.12 + 0.25;
     $("introSub").textContent = t(inv ? "invSub" : "introSub"); $("introSub").style.animationDelay = after + "s";
     const b = $("introGo"); b.textContent = t(inv ? "invGo" : "introGo"); b.style.animationDelay = (after + 0.35) + "s"; b.classList.add("ready");
+    $("introBelief").style.animationDelay = (after + 0.8) + "s";
   }
   $("introGo").onclick = () => {
     ding("open");
