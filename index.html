@@ -1,0 +1,980 @@
+<!doctype html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Até onde uma frase sua consegue chegar? Um telefone sem fio pelo mundo, do projeto Invisible Signals.">
+<meta property="og:title" content="Telefone sem Fio · Invisible Signals">
+<meta property="og:description" content="Uma pessoa, uma frase, um link. Veja ela atravessar cidades, línguas e oceanos.">
+<title>Telefone sem Fio</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@1&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* Layout: one night-side globe as the stage, messages travel along its arcs; the "pass it on" panel sits beside it (stacks on phones).
+   Below: live dashboard, then what the project is. Deliberately single dark theme: lit points on a night sky. */
+:root {
+  --night: #0b1020;      /* page ground */
+  --deep: #121a33;       /* panels */
+  --line: #26325a;       /* hairlines */
+  --ink: #e9ecf7;        /* text */
+  --mute: #9aa4c7;       /* secondary text */
+  --glow: #ffcf5a;       /* a lit point, the accent */
+  --link: #7fd3ff;       /* a message travelling */
+  --twine: #d8b98c;      /* the string between two people */
+  --f-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --f-quote: "Instrument Serif", Georgia, "Times New Roman", serif;
+  --f-data: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+body { background: var(--night); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; margin: 0; }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--night); }
+.wrap { max-width: 1160px; margin: 0 auto; padding-block: 28px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 840px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+header { grid-column: 1 / -1; display: grid; gap: 6px; }
+.eyebrow { font-family: var(--f-data); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--mute); }
+h1 { font-family: var(--f-display); font-weight: 700; font-size: clamp(30px, 5vw, 50px); line-height: 1.04; margin: 0; text-wrap: balance; }
+h1 em { font-style: normal; color: var(--glow); }
+.lede { color: var(--mute); max-width: 62ch; margin: 0; }
+.navlink { font: inherit; font-size: 14px; color: var(--link); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; justify-self: start; }
+.stage { min-width: 0; display: grid; gap: 10px; }
+canvas#globe { width: 100%; max-width: 100%; aspect-ratio: 1 / 1; display: block; cursor: grab; touch-action: none; }
+canvas#globe:active { cursor: grabbing; }
+.legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13px; color: var(--mute); }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--glow); box-shadow: 0 0 8px var(--glow); margin-right: 6px; vertical-align: 1px; }
+.seg { display: inline-block; width: 18px; height: 2px; background: linear-gradient(90deg, var(--twine), var(--link)); margin-right: 6px; vertical-align: 4px; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 520px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stat { border-top: 1px solid var(--line); padding-top: 8px; min-width: 0; }
+.stat b { display: block; font-family: var(--f-data); font-size: 22px; font-weight: 400; font-variant-numeric: tabular-nums; }
+.stat span { font-size: 12px; color: var(--mute); }
+.feed { display: grid; gap: 10px; margin-top: 6px; }
+.feed h3, .passport h3 { font-family: var(--f-display); font-weight: 500; font-size: 18px; margin: 0; }
+.hop { border-top: 1px solid var(--line); padding-top: 10px; display: grid; gap: 4px; min-width: 0; }
+.route { font-family: var(--f-data); font-size: 12px; color: var(--mute); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tag { border: 1px solid var(--line); border-radius: 999px; padding: 1px 8px; }
+.tag.recontada { border-color: var(--link); color: var(--link); }
+.tag.nova { border-color: var(--glow); color: var(--glow); }
+.quote { font-family: var(--f-quote); font-style: italic; font-size: 19px; line-height: 1.35; overflow-wrap: anywhere; }
+.del { font: inherit; font-size: 12px; color: var(--mute); background: none; border: 0; text-decoration: underline; cursor: pointer; padding: 0; margin-left: auto; }
+.panel { background: var(--deep); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 18px; min-width: 0; }
+.panel h2 { font-family: var(--f-display); font-weight: 500; font-size: 21px; margin: 0; }
+.received { border-left: 2px solid var(--link); padding-left: 14px; display: grid; gap: 4px; }
+.received .quote { font-size: 22px; }
+.q { display: grid; gap: 8px; }
+.q label, .q legend { font-weight: 600; }
+fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.opts { display: flex; flex-wrap: wrap; gap: 8px; }
+.opts button, .scale button { font: inherit; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 8px; padding: 8px 14px; cursor: pointer; }
+.scale { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 4px; }
+.scale button { padding: 7px 0; font-family: var(--f-data); font-variant-numeric: tabular-nums; }
+.opts button[aria-pressed="true"], .scale button[aria-pressed="true"] { background: var(--glow); color: var(--night); border-color: var(--glow); }
+textarea { font: inherit; font-family: var(--f-quote); font-style: italic; font-size: 19px; color: var(--ink); background: var(--night); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; width: 100%; box-sizing: border-box; min-height: 96px; resize: vertical; }
+textarea[readonly] { opacity: .8; }
+.count { font-family: var(--f-data); font-size: 12px; color: var(--mute); justify-self: end; }
+.ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--mute); }
+.combo { position: relative; }
+.combo input { font: inherit; color: var(--ink); background: var(--night); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%; box-sizing: border-box; }
+.combo input.picked { border-color: var(--glow); }
+.sugg { position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 5; list-style: none; margin: 0; padding: 4px; background: var(--deep); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 30px rgba(0,0,0,.45); max-height: 260px; overflow: auto; }
+.sugg[hidden] { display: none; }
+.sugg li { padding: 8px 10px; border-radius: 7px; cursor: pointer; display: flex; gap: 8px; align-items: baseline; min-width: 0; }
+.sugg li span { color: var(--mute); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sugg li[aria-selected="true"], .sugg li:hover { background: var(--line); }
+.sugg li.none { color: var(--mute); cursor: default; background: none; }
+.consent { font-size: 13px; color: var(--mute); display: flex; gap: 10px; align-items: flex-start; }
+.consent input { margin-top: 3px; accent-color: var(--glow); }
+.go { font: inherit; font-weight: 600; background: var(--glow); color: var(--night); border: 0; border-radius: 10px; padding: 12px 16px; cursor: pointer; }
+.go:disabled { opacity: .45; cursor: not-allowed; }
+button:focus-visible, select:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.msg { font-size: 14px; color: var(--mute); min-height: 1.5em; margin: 0; }
+.opt { font-weight: 400; color: var(--mute); }
+.share { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 16px; }
+.share code { font-family: var(--f-data); font-size: 13px; background: var(--night); border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; overflow-wrap: anywhere; user-select: all; }
+.ghost { font: inherit; color: var(--ink); background: transparent; border: 1px solid var(--link); border-radius: 10px; padding: 9px 14px; cursor: pointer; justify-self: start; }
+.note { grid-column: 1 / -1; font-size: 12px; color: var(--mute); border-top: 1px solid var(--line); padding-top: 12px; }
+.top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+.tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.langs { display: flex; gap: 4px; }
+.langs button, .sndb { font-family: var(--f-data); font-size: 12px; color: var(--mute); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 3px 9px; cursor: pointer; }
+.langs button[aria-pressed="true"] { color: var(--night); background: var(--ink); border-color: var(--ink); }
+.sndb[aria-pressed="false"] { text-decoration: line-through; opacity: .6; }
+/* opening: one question on the night sky, a message crossing it */
+.intro { position: fixed; inset: 0; z-index: 20; background: radial-gradient(120% 90% at 50% 110%, #1a2550 0%, var(--night) 60%); display: grid; place-items: center; text-align: center;
+  padding-block: calc(env(safe-area-inset-top, 0px) + 24px) calc(env(safe-area-inset-bottom, 0px) + 24px); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); overflow: hidden; }
+.intro[hidden] { display: none !important; }
+.intro.leaving { animation: leave .7s ease forwards; }
+@keyframes leave { to { opacity: 0; transform: scale(1.04); } }
+.intro-in { display: grid; gap: 22px; justify-items: center; max-width: 900px; position: relative; z-index: 1; }
+.intro .eyebrow { opacity: 0; animation: rise .8s ease .2s forwards; }
+.intro h2 { font-family: var(--f-display); font-weight: 700; font-size: clamp(38px, 8vw, 92px); line-height: .98; margin: 0; text-wrap: balance; }
+.intro h2 .w { display: inline-block; opacity: 0; transform: translateY(18px); animation: rise .7s cubic-bezier(.2,.7,.2,1) forwards; }
+.intro h2 .w.hl { color: var(--glow); text-shadow: 0 0 28px rgba(255,207,90,.45); }
+.intro p { color: var(--mute); font-size: clamp(16px, 2.2vw, 20px); max-width: 52ch; margin: 0; opacity: 0; animation: rise .8s ease forwards; }
+.intro .go { font-size: 17px; padding: 14px 26px; opacity: 0; animation: rise .8s ease forwards; box-shadow: 0 0 0 0 rgba(255,207,90,.5); }
+.intro .go.ready { animation: rise .8s ease forwards, ring 2.4s ease-out 1.2s infinite; }
+@keyframes rise { to { opacity: 1; transform: none; } }
+@keyframes ring { 0% { box-shadow: 0 0 0 0 rgba(255,207,90,.45); } 100% { box-shadow: 0 0 0 22px rgba(255,207,90,0); } }
+.sky { position: absolute; inset: 0; width: 100%; height: 100%; }
+@media (prefers-reduced-motion: reduce) { .intro .eyebrow, .intro h2 .w, .intro p, .intro .go { opacity: 1; transform: none; } }
+/* passport: one stamp per country that lit a point */
+.passport { display: grid; gap: 10px; margin-top: 6px; }
+.stamps { display: flex; flex-wrap: wrap; gap: 12px; padding: 4px 2px; }
+.stamp { --r: 0deg; display: grid; justify-items: center; padding: 7px 11px 6px; border: 2px solid var(--glow); border-radius: 9px; color: var(--glow); transform: rotate(var(--r)); font-family: var(--f-data); text-transform: uppercase; letter-spacing: .06em; min-width: 76px;
+  background: rgba(255,207,90,.05); box-shadow: inset 0 0 0 3px var(--night), inset 0 0 0 4px rgba(255,207,90,.45); }
+.stamp b { font-size: 21px; font-weight: 400; line-height: 1.1; }
+.stamp span { font-size: 10px; max-width: 13ch; text-align: center; overflow-wrap: anywhere; }
+.stamp i { font-style: normal; font-size: 10px; color: var(--mute); }
+.stamp.new { animation: stamp .6s cubic-bezier(.2,1.6,.4,1) both; }
+@keyframes stamp { 0% { opacity: 0; transform: rotate(calc(var(--r) - 20deg)) scale(2.3); } 55% { opacity: 1; } 100% { opacity: 1; transform: rotate(var(--r)) scale(1); } }
+/* your sentence's reach + achievements */
+.reach { display: grid; gap: 10px; }
+.reach .nums { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.badge { font-size: 12px; border: 1px dashed var(--line); color: var(--mute); border-radius: 999px; padding: 3px 10px; opacity: .6; }
+.badge.on { border: 1px solid var(--glow); color: var(--night); background: var(--glow); opacity: 1; font-weight: 600; }
+/* live dashboard + about */
+.dash, .about { grid-column: 1 / -1; border-top: 1px solid var(--line); padding-top: 24px; display: grid; gap: 16px; }
+.dash h2, .about h2 { font-family: var(--f-display); font-weight: 700; font-size: clamp(24px, 3.4vw, 34px); margin: 0; }
+.dash > p { margin: 0; color: var(--mute); max-width: 62ch; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 14px; }
+.card { background: var(--deep); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.card h3 { font-size: 15px; font-weight: 600; margin: 0; }
+.card p { margin: 0; color: var(--mute); font-size: 14px; }
+.bar { display: grid; grid-template-columns: minmax(0, 12ch) minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13px; }
+.bar > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar .track { height: 8px; background: var(--night); border-radius: 99px; overflow: hidden; }
+.bar .fill { height: 100%; background: var(--link); border-radius: 99px; transition: width .6s ease; }
+.bar b { font-family: var(--f-data); font-weight: 400; font-variant-numeric: tabular-nums; color: var(--mute); }
+.hist { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); grid-template-rows: 90px; gap: 3px; align-items: end; }
+.hist div { background: var(--glow); border-radius: 3px 3px 0 0; min-height: 2px; transition: height .6s ease; }
+.hist-x { display: grid; grid-template-columns: repeat(11, minmax(0, 1fr)); gap: 3px; font-family: var(--f-data); font-size: 11px; color: var(--mute); text-align: center; }
+.small { font-size: 12px !important; }
+/* game feel: toast, shake */
+.toast { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 20px); transform: translateX(-50%); z-index: 30; background: var(--deep); border: 1px solid var(--glow); color: var(--ink); border-radius: 999px; padding: 10px 18px; font-weight: 600;
+  box-shadow: 0 10px 40px rgba(0,0,0,.5), 0 0 24px rgba(255,207,90,.25); max-width: calc(100vw - 32px); width: max-content; text-align: center; animation: pop .45s cubic-bezier(.2,1.5,.4,1); }
+.toast.big { background: var(--glow); color: var(--night); font-size: 17px; }
+.toast[hidden] { display: none; }
+@keyframes pop { from { opacity: 0; transform: translate(-50%, 20px) scale(.9); } to { opacity: 1; transform: translate(-50%, 0) scale(1); } }
+@keyframes shake { 0%, 100% { transform: none; } 15% { transform: translate(-5px, 2px) rotate(-.3deg); } 30% { transform: translate(4px, -2px) rotate(.2deg); } 45% { transform: translate(-3px, 2px); } 60% { transform: translate(2px, -1px); } 80% { transform: translate(-1px, 1px); } }
+@keyframes shakeBig { 0%, 100% { transform: none; } 10% { transform: translate(-11px, 4px) rotate(-.6deg); } 22% { transform: translate(10px, -5px) rotate(.5deg); } 34% { transform: translate(-8px, 4px) rotate(-.3deg); } 48% { transform: translate(6px, -3px); } 62% { transform: translate(-4px, 2px); } 78% { transform: translate(2px, -1px); } }
+.wrap.shake { animation: shake .45s ease; }
+.wrap.shake-big { animation: shakeBig .75s ease; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+<script>window.TSF_SITE = true;</script>
+<script src="config.js"></script>
+</head>
+<body>
+
+<section class="intro" id="intro" aria-labelledby="introQ">
+  <canvas class="sky" id="sky" aria-hidden="true"></canvas>
+  <div class="intro-in">
+    <div class="eyebrow" data-i18n="introEye">Invisible Signals · o telefone sem fio da era digital</div>
+    <h2 id="introQ"></h2>
+    <p id="introSub"></p>
+    <button class="go" id="introGo" type="button"></button>
+  </div>
+</section>
+
+<div class="wrap">
+  <header>
+    <div class="top"><div class="eyebrow" data-i18n="eyebrow">Invisible Signals · telefone sem fio</div><div class="tools"><button type="button" class="sndb" id="snd" aria-pressed="true">♪ som</button><div class="langs" id="langs" role="group" aria-label="Idioma"></div></div></div>
+    <h1><span data-i18n="h1a">Uma frase que você</span> <em data-i18n="h1em">daria ao mundo</em><span data-i18n="h1b">, passando de mão em mão.</span></h1>
+    <p class="lede" data-i18n="lede">Escreva um ditado, um conselho ou algo que a vida te ensinou. Mande o link para alguém. Quem recebe pode passar igual, contar do seu jeito ou começar outra frase. No globo, cada mensagem viaja de quem mandou para quem recebeu.</p>
+    <button type="button" class="navlink" id="toAbout" data-i18n="aboutNav">O projeto ↓</button>
+  </header>
+
+  <section class="stage" aria-label="Globo com as mensagens viajando">
+    <canvas id="globe" width="900" height="900" role="img" aria-label="Globo girando: pontos dourados são pessoas, luzes azuis são mensagens viajando de uma pessoa para outra"></canvas>
+    <div class="legend"><span><span class="dot"></span><span data-i18n="leg1">alguém passou uma mensagem desta cidade</span></span><span><span class="seg"></span><span data-i18n="leg2b">o barbante: a mensagem vibrando de quem mandou até quem recebeu</span></span></div>
+    <div class="stats" aria-live="polite">
+      <div class="stat"><b id="sN">0</b><span data-i18n="stN">mensagens</span></div>
+      <div class="stat"><b id="sP">0</b><span data-i18n="stP">países</span></div>
+      <div class="stat"><b id="sK">0</b><span data-i18n="stK">km percorridos</span></div>
+      <div class="stat"><b id="sD">0</b><span data-i18n="stD">elos na maior corrente</span></div>
+    </div>
+    <div class="passport">
+      <h3 data-i18n="passTitle">Carimbos no passaporte</h3>
+      <p class="msg" id="passEmpty" data-i18n="passEmpty">Nenhum carimbo ainda. Cada país novo ganha o seu.</p>
+      <div class="stamps" id="stamps"></div>
+    </div>
+    <div class="feed" id="feedBox">
+      <h3 data-i18n="feedTitle">A viagem das mensagens</h3>
+      <p class="msg" id="feedEmpty" data-i18n="feedEmpty">Ainda não há mensagens. A primeira acende o primeiro ponto.</p>
+      <div id="feed"></div>
+    </div>
+  </section>
+
+  <form class="panel" id="form" novalidate>
+    <div class="received" id="received" hidden>
+      <span class="msg" id="recvFrom"></span>
+      <div class="quote" id="recvText"></div>
+    </div>
+    <h2 id="formTitle">Sua frase para o mundo</h2>
+    <fieldset class="q" id="modeBox" hidden>
+      <legend data-i18n="modesLegend">O que você faz com a mensagem que recebeu?</legend>
+      <div class="opts" id="modes"></div>
+    </fieldset>
+    <div class="q">
+      <label for="text" data-i18n="textLabel">Um ditado, um conselho ou uma experiência, em até 280 letras</label>
+      <textarea id="text" maxlength="280" placeholder="Ex.: Ninguém floresce sozinho."></textarea>
+      <span class="count" id="count">0 / 280</span>
+    </div>
+    <div class="q">
+      <label for="place" data-i18n="cityLabel">De onde você manda? Digite sua cidade. Só a cidade, nunca o endereço.</label>
+      <div class="combo">
+        <input id="place" type="text" autocomplete="off" spellcheck="false" role="combobox" aria-autocomplete="list" aria-controls="sugg" aria-expanded="false">
+        <ul class="sugg" id="sugg" role="listbox" hidden></ul>
+      </div>
+    </div>
+    <div class="q">
+      <label id="q1l"><span data-i18n="q1">Imagine uma escada de 0 a 10, em que 10 é a melhor vida possível para você. Em que degrau você está hoje?</span> <span class="opt" data-i18n="opt">(opcional)</span></label>
+      <div class="scale" role="group" aria-labelledby="q1l" id="q1"></div>
+      <div class="ends"><span data-i18n="end0">0 · pior vida possível</span><span data-i18n="end10">10 · melhor</span></div>
+    </div>
+    <label class="consent"><input type="checkbox" id="ok"> <span data-i18n="consent">Topo participar deste teste. Minha frase aparece para quem abre o mapa, sem meu nome, só com a cidade. Não vou escrever dados pessoais de ninguém.</span></label>
+    <button class="go" id="go" type="submit" disabled data-i18n="go">Mandar minha frase</button>
+    <p class="msg" id="msg" role="status"></p>
+    <div class="share" id="share" hidden>
+      <div class="reach" id="reach" hidden>
+        <strong data-i18n="reachTitle">Até onde sua frase chegou</strong>
+        <div class="nums">
+          <div class="stat"><b id="rP">0</b><span data-i18n="rPl">pessoas alcançadas</span></div>
+          <div class="stat"><b id="rC">0</b><span data-i18n="stP">países</span></div>
+          <div class="stat"><b id="rK">0</b><span data-i18n="stK">km percorridos</span></div>
+        </div>
+        <div class="badges" id="badges"></div>
+      </div>
+      <strong data-i18n="shareTitle">Agora passe adiante</strong>
+      <span class="msg" data-i18n="shareText">Mande este link para uma pessoa. Quando ela responder, uma luz sai do seu ponto até o dela.</span>
+      <code id="link"></code>
+      <button class="ghost" id="copy" type="button" data-i18n="copy">Copiar link</button>
+    </div>
+  </form>
+
+  <section class="dash" aria-labelledby="dashT">
+    <h2 id="dashT" data-i18n="dashTitle">Painel ao vivo</h2>
+    <p data-i18n="dashSub">Tudo o que está no mapa, contado enquanto acontece. Quanto mais gente participa, mais nítido fica o retrato.</p>
+    <div class="cards">
+      <div class="card"><h3 data-i18n="dLang">Em que língua as pessoas escrevem</h3><div id="dLangBox"></div></div>
+      <div class="card"><h3 data-i18n="dMode">O que fazem com a frase que recebem</h3><div id="dModeBox"></div></div>
+      <div class="card"><h3 data-i18n="dLadder">Degrau de hoje na escada de 0 a 10</h3>
+        <div class="hist" id="hist" aria-hidden="true"></div><div class="hist-x" id="histX" aria-hidden="true"></div>
+        <p id="dLadderMean"></p><div id="dLadderBy"></div><p class="small" data-i18n="dLadderNote">Média por país só aparece com 5 respostas ou mais daquele país.</p></div>
+    </div>
+  </section>
+
+  <section class="about" id="about" aria-labelledby="aboutT">
+    <h2 id="aboutT" data-i18n="aboutTitle">Por trás do telefone sem fio</h2>
+    <div class="cards">
+      <div class="card"><h3 data-i18n="ab1h">O que é</h3><p data-i18n="ab1"></p></div>
+      <div class="card"><h3 data-i18n="ab2h">Por que existe</h3><p data-i18n="ab2"></p></div>
+      <div class="card"><h3 data-i18n="ab3h">O que medimos</h3><p data-i18n="ab3"></p></div>
+      <div class="card"><h3 data-i18n="ab4h">O que guardamos</h3><p data-i18n="ab4"></p></div>
+    </div>
+  </section>
+
+  <p class="note" id="note" data-i18n="note">Protótipo de teste do projeto Invisible Signals.</p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(() => {
+  // Two homes, one page: on claude.ai it saves to the artifact's own database; on the public site (config.js sets TSF_SUPABASE) it saves to Supabase, no login.
+  const SB = window.TSF_SUPABASE && window.TSF_SUPABASE.url && window.TSF_SUPABASE.key ? window.TSF_SUPABASE : null;
+  const SITE = !!window.TSF_SITE || !!SB;
+  const BASE = SITE ? location.origin + location.pathname : "https://claude.ai/artifact/T9nkyPQaHW6NTeXbFsxhnb";
+  // instant suggestions that work offline; the search box also asks a world city index when it can
+  const CITIES = [
+    ["Goiânia",-16.68,-49.25,"BR"],["Aparecida de Goiânia",-16.82,-49.24,"BR"],["Anápolis",-16.33,-48.95,"BR"],["Brasília",-15.79,-47.88,"BR"],
+    ["São Paulo",-23.55,-46.63,"BR"],["Campinas",-22.91,-47.06,"BR"],["Rio de Janeiro",-22.91,-43.17,"BR"],["Belo Horizonte",-19.92,-43.94,"BR"],
+    ["Vitória",-20.32,-40.34,"BR"],["Salvador",-12.97,-38.50,"BR"],["Recife",-8.05,-34.88,"BR"],["Fortaleza",-3.73,-38.53,"BR"],["Natal",-5.79,-35.21,"BR"],
+    ["João Pessoa",-7.12,-34.86,"BR"],["Maceió",-9.67,-35.74,"BR"],["Aracaju",-10.91,-37.07,"BR"],["Teresina",-5.09,-42.80,"BR"],["São Luís",-2.53,-44.30,"BR"],
+    ["Belém",-1.46,-48.50,"BR"],["Macapá",0.03,-51.07,"BR"],["Manaus",-3.12,-60.02,"BR"],["Boa Vista",2.82,-60.67,"BR"],["Porto Velho",-8.76,-63.90,"BR"],
+    ["Rio Branco",-9.97,-67.81,"BR"],["Palmas",-10.18,-48.33,"BR"],["Cuiabá",-15.60,-56.10,"BR"],["Campo Grande",-20.47,-54.62,"BR"],["Curitiba",-25.43,-49.27,"BR"],
+    ["Florianópolis",-27.60,-48.55,"BR"],["Porto Alegre",-30.03,-51.23,"BR"],
+    ["Zurich",47.37,8.54,"CH"],["Praha",50.08,14.44,"CZ"],["Roma",41.90,12.50,"IT"],["Milano",45.46,9.19,"IT"],["Lisboa",38.72,-9.14,"PT"],["Porto",41.15,-8.61,"PT"],
+    ["Madrid",40.42,-3.70,"ES"],["Paris",48.86,2.35,"FR"],["London",51.51,-0.13,"GB"],["Berlin",52.52,13.40,"DE"],["New York",40.71,-74.01,"US"],["Miami",25.76,-80.19,"US"],
+    ["Toronto",43.65,-79.38,"CA"],["Ciudad de México",19.43,-99.13,"MX"],["Buenos Aires",-34.60,-58.38,"AR"],["Santiago",-33.45,-70.67,"CL"],["Lagos",6.52,3.38,"NG"],
+    ["Nairobi",-1.29,36.82,"KE"],["Johannesburg",-26.20,28.05,"ZA"],["Mumbai",19.08,72.88,"IN"],["Tokyo",35.68,139.69,"JP"],["Sydney",-33.87,151.21,"AU"],
+    ["Zurique",47.37,8.54,"CH"],["Praga",50.08,14.44,"CZ"],["Milão",45.46,9.19,"IT"],["Londres",51.51,-0.13,"GB"],["Nova York",40.71,-74.01,"US"],["Tóquio",35.68,139.69,"JP"]
+  ];
+  // continent of each country, for the "crossed the ocean" badge (anything not listed counts as Europe)
+  const CONTS = {};
+  for (const [k, list] of Object.entries({
+    sa: "AR BO BR CL CO EC GY PE PY SR UY VE FK GF",
+    na: "US CA MX GT BZ HN SV NI CR PA CU DO HT JM BS BB TT PR AG DM GD KN LC VC GL BM",
+    af: "DZ AO BJ BW BF BI CM CV CF TD KM CG CD CI DJ EG GQ ER SZ ET GA GM GH GN GW KE LS LR LY MG MW ML MR MU MA MZ NA NE NG RW ST SN SC SL SO ZA SS SD TZ TG TN UG ZM ZW",
+    as: "AF AM AZ BH BD BT BN KH CN GE HK IN ID IR IQ IL JP JO KZ KW KG LA LB MO MY MV MN MM NP KP OM PK PS PH QA SA SG KR LK SY TW TJ TH TL TR TM AE UZ VN YE",
+    oc: "AU NZ FJ PG SB VU WS TO KI FM MH PW NR TV NC PF"
+  })) for (const c of list.split(" ")) CONTS[c] = k;
+  const CONT = c => (c && CONTS[c]) || "eu";
+  const farApart = (a, b) => { const x = CONT(a), y = CONT(b); return x !== y && !((x === "na" && y === "sa") || (x === "sa" && y === "na")); };
+
+  const I18N = {
+    pt: { eyebrow: "Invisible Signals · telefone sem fio", h1a: "Uma frase que você", h1em: "daria ao mundo", h1b: ", passando de mão em mão.",
+      lede: "Escreva um ditado, um conselho ou algo que a vida te ensinou. Mande o link para alguém. Quem recebe pode passar igual, contar do seu jeito ou começar outra frase. No globo, cada mensagem viaja de quem mandou para quem recebeu.",
+      leg1: "alguém passou uma mensagem desta cidade", stN: "mensagens", stD: "elos na maior corrente",
+      feedTitle: "A viagem das mensagens", feedEmpty: "Ainda não há mensagens. A primeira acende o primeiro ponto.", modesLegend: "O que você faz com a mensagem que recebeu?",
+      textLabel: "Um ditado, um conselho ou uma experiência, em até 280 letras", textPh: "Ex.: Ninguém floresce sozinho.",
+      cityLabel: "De onde você manda? Digite sua cidade. Só a cidade, nunca o endereço.", placePh: "Comece a digitar: Goiânia, Roma, Praga…", noPlace: "Nenhuma cidade encontrada. Tente outro nome.",
+      q1: "Imagine uma escada de 0 a 10, em que 10 é a melhor vida possível para você. Em que degrau você está hoje?", opt: "(opcional)", end0: "0 · pior vida possível", end10: "10 · melhor",
+      consent: "Topo participar deste teste. Minha frase aparece para quem abre o mapa, sem meu nome, só com a cidade. Não vou escrever dados pessoais de ninguém.", go: "Mandar minha frase",
+      shareTitle: "Agora passe adiante", shareText: "Mande este link para uma pessoa. Quando ela responder, uma luz sai do seu ponto até o dela.", copy: "Copiar link", copied: "Copiado", selected: "Selecionado: copie com Ctrl+C",
+      note: "Protótipo de teste do projeto Invisible Signals. Só manda mensagem quem tem acesso a este link no claude.ai como Contribuidor. Pessoas sem login veem a página, mas não conseguem acender um ponto.",
+      noteSite: "Protótipo de teste do projeto Invisible Signals. Qualquer pessoa com o link pode participar, sem login e sem cadastro.",
+      titleNew: "Sua frase para o mundo", titleTurn: "Agora é sua vez", recvFrom: "Alguém em {city} passou esta mensagem para você:", startedIn: "começou em {city}",
+      m_igual: "Passar igual", m_recontada: "Contar do meu jeito", m_nova: "Começar outra frase", t_igual: "passou igual", t_recontada: "recontou", t_nova: "frase nova",
+      del: "apagar", delConfirm: "confirmar apagar", delFail: "não deu para apagar",
+      noDb: "Esta visualização não consegue salvar mensagens. Abra o link no claude.ai com login.", noWrite: "Você pode ver o mapa, mas seu acesso não permite mandar uma mensagem. Peça acesso de Contribuidor a quem te mandou o link.",
+      noSite: "O mapa ainda não está ligado ao banco de dados. Dá para olhar, mas ainda não dá para mandar.",
+      loading: "Ainda carregando as mensagens…", loadFail: "Não foi possível carregar as mensagens agora.", sending: "Mandando…", sent: "Sua mensagem saiu. Seu ponto pisca no globo.",
+      already: "Você já acendeu seu ponto neste aparelho. Agora é passar o link adiante.",
+      full: "O mapa está cheio por enquanto. Avise quem te mandou o link.", sendFail: "Não deu para mandar agora. Tente de novo em alguns segundos.",
+      introQ: "Até onde *uma frase sua* consegue chegar?", introSub: "Uma pessoa, uma frase, um link. Veja ela atravessar cidades, línguas e oceanos, e descubra como ela muda no caminho.", introGo: "Lançar minha frase", invQ: "Uma frase *viajou até você.*", invSub: "Alguém escolheu você para recebê-la. Abra, leia e decida se ela continua a viagem.", invGo: "Abrir a mensagem",
+      introEye: "Invisible Signals · o telefone sem fio da era digital", leg2b: "o barbante: a mensagem vibrando de quem mandou até quem recebeu", stP: "países", stK: "km percorridos",
+      passTitle: "Carimbos no passaporte", passEmpty: "Nenhum carimbo ainda. Cada país novo ganha o seu.", reachTitle: "Até onde sua frase chegou", rPl: "pessoas alcançadas",
+      b_first: "Ponto aceso", b_link: "Primeiro elo", b_ocean: "Cruzou o oceano", b_3c: "3 países", b_1k: "1.000 km", b_10k: "10.000 km",
+      toastNew: "Uma frase acabou de acender em {city}", toastMine: "Sua frase chegou em {city}!", toastSent: "Ponto aceso! Agora mande o link para alguém.", sound: "som",
+      aboutNav: "O projeto ↓", dashTitle: "Painel ao vivo", dashSub: "Tudo o que está no mapa, contado enquanto acontece. Quanto mais gente participa, mais nítido fica o retrato.",
+      dLang: "Em que língua as pessoas escrevem", dMode: "O que fazem com a frase que recebem", dLadder: "Degrau de hoje na escada de 0 a 10",
+      dLadderNote: "Média por país só aparece com 5 respostas ou mais daquele país.", dMean: "média {m} · {n} respostas", dEmpty: "Ainda sem dados.",
+      aboutTitle: "Por trás do telefone sem fio", ab1h: "O que é", ab2h: "Por que existe", ab3h: "O que medimos", ab4h: "O que guardamos",
+      ab1: "Uma frase, um ditado, um conselho ou uma lição de vida passa de pessoa em pessoa, de cidade em cidade, às vezes de língua em língua. Cada pessoa decide: passa igual, conta do seu jeito ou começa outra.",
+      ab2: "É um teste do Invisible Signals, uma pesquisa sobre florescimento humano: o que faz uma vida ir bem, e o que as perguntas de sempre não conseguem ver. Uma das dúvidas é a língua: “feliz”, “happy” e “šťastný” querem dizer a mesma coisa? Aqui dá para ver uma frase atravessar línguas e mudar no caminho.",
+      ab3: "Até onde uma frase chega, quantas vezes ela é passada igual ou recontada, em que línguas ela viaja e, se a pessoa quiser responder, o degrau de hoje na escada de 0 a 10, a mesma pergunta usada em grandes estudos internacionais. Depois vêm outras perguntas, uma de cada vez.",
+      ab4: "A frase, a cidade, a língua da página e, se você responder, o degrau da escada. Nada de nome, e-mail ou endereço. O degrau nunca aparece por pessoa, só em contagens e médias de grupos." },
+    en: { eyebrow: "Invisible Signals · telephone game", h1a: "A sentence you would", h1em: "give the world", h1b: ", passed from hand to hand.",
+      lede: "Write a saying, a piece of advice or something life taught you. Send the link to someone. Whoever receives it can pass it on as it is, retell it their own way or start a new one. On the globe, each message travels from the sender to the receiver.",
+      leg1: "someone sent a message from this city", stN: "messages", stD: "links in the longest chain",
+      feedTitle: "How the messages travel", feedEmpty: "No messages yet. The first one lights the first point.", modesLegend: "What will you do with the message you received?",
+      textLabel: "A saying, a piece of advice or an experience, up to 280 characters", textPh: "E.g. Nobody flourishes alone.",
+      cityLabel: "Where are you sending from? Type your city. Only the city, never your address.", placePh: "Start typing: Goiânia, Rome, Prague…", noPlace: "No city found. Try another name.",
+      q1: "Imagine a ladder from 0 to 10, where 10 is the best possible life for you. Which step are you on today?", opt: "(optional)", end0: "0 · worst possible life", end10: "10 · best",
+      consent: "I agree to take part in this test. My sentence is shown to anyone who opens the map, without my name, only with the city. I won't write anyone's personal details.", go: "Send my sentence",
+      shareTitle: "Now pass it on", shareText: "Send this link to one person. When they reply, a light travels from your point to theirs.", copy: "Copy link", copied: "Copied", selected: "Selected: copy with Ctrl+C",
+      note: "Test prototype of the Invisible Signals project. Only people with Contributor access to this link on claude.ai can send a message. People who aren't signed in can see the page but can't light a point.",
+      noteSite: "Test prototype of the Invisible Signals project. Anyone with the link can take part, no sign-in and no account.",
+      titleNew: "Your sentence for the world", titleTurn: "Now it's your turn", recvFrom: "Someone in {city} passed this message to you:", startedIn: "started in {city}",
+      m_igual: "Pass it on as it is", m_recontada: "Retell it my way", m_nova: "Start a new one", t_igual: "passed as is", t_recontada: "retold", t_nova: "new sentence",
+      del: "delete", delConfirm: "confirm delete", delFail: "couldn't delete",
+      noDb: "This view can't save messages. Open the link on claude.ai while signed in.", noWrite: "You can see the map, but your access doesn't allow sending a message. Ask the person who sent you the link for Contributor access.",
+      noSite: "The map isn't connected to its database yet. You can look around, but you can't send yet.",
+      loading: "Still loading the messages…", loadFail: "The messages couldn't be loaded right now.", sending: "Sending…", sent: "Your message is on its way. Your point is blinking on the globe.",
+      already: "You've already lit your point on this device. Now pass the link on.",
+      full: "The map is full for now. Tell the person who sent you the link.", sendFail: "Couldn't send right now. Try again in a few seconds.",
+      introQ: "How far can *one sentence of yours* travel?", introSub: "One person, one sentence, one link. Watch it cross cities, languages and oceans, and find out how it changes along the way.", introGo: "Launch my sentence", invQ: "A sentence *travelled to you.*", invSub: "Someone chose you to receive it. Open it, read it, and decide whether it keeps travelling.", invGo: "Open the message",
+      introEye: "Invisible Signals · the telephone game, digital edition", leg2b: "the string: the message vibrating from sender to receiver", stP: "countries", stK: "km travelled",
+      passTitle: "Passport stamps", passEmpty: "No stamps yet. Every new country gets one.", reachTitle: "How far your sentence has gone", rPl: "people reached",
+      b_first: "Point lit", b_link: "First link", b_ocean: "Crossed the ocean", b_3c: "3 countries", b_1k: "1,000 km", b_10k: "10,000 km",
+      toastNew: "A sentence just lit up in {city}", toastMine: "Your sentence reached {city}!", toastSent: "Point lit! Now send the link to someone.", sound: "sound",
+      aboutNav: "The project ↓", dashTitle: "Live dashboard", dashSub: "Everything on the map, counted as it happens. The more people take part, the sharper the picture.",
+      dLang: "Which language people write in", dMode: "What people do with the sentence they receive", dLadder: "Today's step on the 0–10 ladder",
+      dLadderNote: "A country's average only appears once it has 5 or more answers.", dMean: "average {m} · {n} answers", dEmpty: "No data yet.",
+      aboutTitle: "Behind the telephone game", ab1h: "What it is", ab2h: "Why it exists", ab3h: "What we measure", ab4h: "What we keep",
+      ab1: "A sentence, a saying, a piece of advice or a life lesson passes from person to person, city to city, sometimes language to language. Each person decides: pass it on as it is, retell it their way, or start a new one.",
+      ab2: "It is a test by Invisible Signals, a research project on human flourishing: what makes a life go well, and what the usual questions miss. One open question is language: do “feliz”, “happy” and “šťastný” mean the same thing? Here you can watch a sentence cross languages and change along the way.",
+      ab3: "How far a sentence goes, how often it is passed on unchanged or retold, which languages it travels through and, if people choose to answer, today's step on the 0–10 ladder, the same question used in large international studies. More questions will follow, one at a time.",
+      ab4: "The sentence, the city, the page language and, if you answer, your ladder step. No name, email or address. Your step is never shown per person, only in counts and group averages." },
+    fr: { eyebrow: "Invisible Signals · téléphone arabe", h1a: "Une phrase que vous", h1em: "offririez au monde", h1b: ", passée de main en main.",
+      lede: "Écrivez un proverbe, un conseil ou quelque chose que la vie vous a appris. Envoyez le lien à quelqu'un. Qui le reçoit peut le transmettre tel quel, le raconter à sa façon ou commencer une autre phrase. Sur le globe, chaque message voyage de l'expéditeur au destinataire.",
+      leg1: "quelqu'un a envoyé un message depuis cette ville", stN: "messages", stD: "maillons de la plus longue chaîne",
+      feedTitle: "Le voyage des messages", feedEmpty: "Pas encore de message. Le premier allume le premier point.", modesLegend: "Que faites-vous du message reçu ?",
+      textLabel: "Un proverbe, un conseil ou une expérience, en 280 caractères maximum", textPh: "Ex. : Personne ne s'épanouit seul.",
+      cityLabel: "D'où envoyez-vous ? Tapez votre ville. Seulement la ville, jamais l'adresse.", placePh: "Commencez à taper : Goiânia, Rome, Prague…", noPlace: "Aucune ville trouvée. Essayez un autre nom.",
+      q1: "Imaginez une échelle de 0 à 10, où 10 est la meilleure vie possible pour vous. Sur quel échelon êtes-vous aujourd'hui ?", opt: "(facultatif)", end0: "0 · pire vie possible", end10: "10 · meilleure",
+      consent: "J'accepte de participer à ce test. Ma phrase est visible par ceux qui ouvrent la carte, sans mon nom, seulement avec la ville. Je n'écrirai les données personnelles de personne.", go: "Envoyer ma phrase",
+      shareTitle: "Maintenant, transmettez", shareText: "Envoyez ce lien à une personne. Quand elle répondra, une lumière partira de votre point vers le sien.", copy: "Copier le lien", copied: "Copié", selected: "Sélectionné : copiez avec Ctrl+C",
+      note: "Prototype de test du projet Invisible Signals. Seules les personnes ayant un accès Contributeur à ce lien sur claude.ai peuvent envoyer un message. Les personnes non connectées voient la page mais ne peuvent pas allumer de point.",
+      noteSite: "Prototype de test du projet Invisible Signals. Toute personne ayant le lien peut participer, sans connexion ni compte.",
+      titleNew: "Votre phrase pour le monde", titleTurn: "À vous maintenant", recvFrom: "Quelqu'un à {city} vous a transmis ce message :", startedIn: "a commencé à {city}",
+      m_igual: "Transmettre tel quel", m_recontada: "Le raconter à ma façon", m_nova: "Commencer une autre phrase", t_igual: "transmis tel quel", t_recontada: "reformulé", t_nova: "nouvelle phrase",
+      del: "supprimer", delConfirm: "confirmer la suppression", delFail: "suppression impossible",
+      noDb: "Cet affichage ne peut pas enregistrer de messages. Ouvrez le lien sur claude.ai en étant connecté.", noWrite: "Vous pouvez voir la carte, mais votre accès ne permet pas d'envoyer un message. Demandez un accès Contributeur à la personne qui vous a envoyé le lien.",
+      noSite: "La carte n'est pas encore reliée à sa base de données. Vous pouvez regarder, mais pas encore envoyer.",
+      loading: "Chargement des messages…", loadFail: "Impossible de charger les messages pour le moment.", sending: "Envoi…", sent: "Votre message est parti. Votre point clignote sur le globe.",
+      already: "Vous avez déjà allumé votre point sur cet appareil. Maintenant, transmettez le lien.",
+      full: "La carte est pleine pour le moment. Prévenez la personne qui vous a envoyé le lien.", sendFail: "Envoi impossible pour le moment. Réessayez dans quelques secondes.",
+      introQ: "Jusqu'où *une de vos phrases* peut-elle aller ?", introSub: "Une personne, une phrase, un lien. Regardez-la traverser villes, langues et océans, et découvrez comment elle change en chemin.", introGo: "Lancer ma phrase", invQ: "Une phrase *a voyagé jusqu'à vous.*", invSub: "Quelqu'un vous a choisi pour la recevoir. Ouvrez-la, lisez-la et décidez si elle continue son voyage.", invGo: "Ouvrir le message",
+      introEye: "Invisible Signals · le téléphone arabe de l'ère numérique", leg2b: "la ficelle : le message qui vibre de l'expéditeur au destinataire", stP: "pays", stK: "km parcourus",
+      passTitle: "Tampons du passeport", passEmpty: "Aucun tampon pour l'instant. Chaque nouveau pays a le sien.", reachTitle: "Jusqu'où votre phrase est allée", rPl: "personnes atteintes",
+      b_first: "Point allumé", b_link: "Premier maillon", b_ocean: "A traversé l'océan", b_3c: "3 pays", b_1k: "1 000 km", b_10k: "10 000 km",
+      toastNew: "Une phrase vient de s'allumer à {city}", toastMine: "Votre phrase est arrivée à {city} !", toastSent: "Point allumé ! Envoyez maintenant le lien à quelqu'un.", sound: "son",
+      aboutNav: "Le projet ↓", dashTitle: "Tableau en direct", dashSub: "Tout ce qui est sur la carte, compté en direct. Plus il y a de participants, plus l'image est nette.",
+      dLang: "Dans quelle langue les gens écrivent", dMode: "Ce que les gens font de la phrase reçue", dLadder: "L'échelon du jour sur l'échelle de 0 à 10",
+      dLadderNote: "La moyenne d'un pays n'apparaît qu'à partir de 5 réponses.", dMean: "moyenne {m} · {n} réponses", dEmpty: "Pas encore de données.",
+      aboutTitle: "Derrière le téléphone arabe", ab1h: "Ce que c'est", ab2h: "Pourquoi il existe", ab3h: "Ce que nous mesurons", ab4h: "Ce que nous gardons",
+      ab1: "Une phrase, un proverbe, un conseil ou une leçon de vie passe de personne en personne, de ville en ville, parfois de langue en langue. Chacun décide : la transmettre telle quelle, la raconter à sa façon ou en commencer une autre.",
+      ab2: "C'est un test d'Invisible Signals, une recherche sur l'épanouissement humain : ce qui fait qu'une vie va bien, et ce que les questions habituelles ne voient pas. Une des questions ouvertes est la langue : « feliz », « happy » et « šťastný » veulent-ils dire la même chose ? Ici, on voit une phrase traverser les langues et changer en chemin.",
+      ab3: "Jusqu'où une phrase va, combien de fois elle est transmise telle quelle ou reformulée, dans quelles langues elle voyage et, si la personne veut répondre, l'échelon du jour sur l'échelle de 0 à 10, la même question que dans les grandes études internationales. D'autres questions suivront, une à la fois.",
+      ab4: "La phrase, la ville, la langue de la page et, si vous répondez, votre échelon. Ni nom, ni e-mail, ni adresse. L'échelon n'est jamais affiché par personne, seulement en comptes et en moyennes de groupe." },
+    es: { eyebrow: "Invisible Signals · teléfono descompuesto", h1a: "Una frase que", h1em: "le darías al mundo", h1b: ", pasando de mano en mano.",
+      lede: "Escribe un refrán, un consejo o algo que la vida te enseñó. Manda el enlace a alguien. Quien lo recibe puede pasarlo igual, contarlo a su manera o empezar otra frase. En el globo, cada mensaje viaja de quien lo envió a quien lo recibió.",
+      leg1: "alguien envió un mensaje desde esta ciudad", stN: "mensajes", stD: "eslabones en la cadena más larga",
+      feedTitle: "El viaje de los mensajes", feedEmpty: "Todavía no hay mensajes. El primero enciende el primer punto.", modesLegend: "¿Qué haces con el mensaje que recibiste?",
+      textLabel: "Un refrán, un consejo o una experiencia, hasta 280 caracteres", textPh: "Ej.: Nadie florece solo.",
+      cityLabel: "¿Desde dónde envías? Escribe tu ciudad. Solo la ciudad, nunca la dirección.", placePh: "Empieza a escribir: Goiânia, Roma, Praga…", noPlace: "No se encontró ninguna ciudad. Prueba otro nombre.",
+      q1: "Imagina una escalera de 0 a 10, donde 10 es la mejor vida posible para ti. ¿En qué escalón estás hoy?", opt: "(opcional)", end0: "0 · peor vida posible", end10: "10 · mejor",
+      consent: "Acepto participar en esta prueba. Mi frase la ve quien abre el mapa, sin mi nombre, solo con la ciudad. No escribiré datos personales de nadie.", go: "Enviar mi frase",
+      shareTitle: "Ahora pásalo", shareText: "Manda este enlace a una persona. Cuando responda, una luz saldrá de tu punto hacia el suyo.", copy: "Copiar enlace", copied: "Copiado", selected: "Seleccionado: copia con Ctrl+C",
+      note: "Prototipo de prueba del proyecto Invisible Signals. Solo envía mensajes quien tiene acceso de Colaborador a este enlace en claude.ai. Las personas sin sesión ven la página, pero no pueden encender un punto.",
+      noteSite: "Prototipo de prueba del proyecto Invisible Signals. Cualquier persona con el enlace puede participar, sin iniciar sesión ni registrarse.",
+      titleNew: "Tu frase para el mundo", titleTurn: "Ahora es tu turno", recvFrom: "Alguien en {city} te pasó este mensaje:", startedIn: "empezó en {city}",
+      m_igual: "Pasarlo igual", m_recontada: "Contarlo a mi manera", m_nova: "Empezar otra frase", t_igual: "lo pasó igual", t_recontada: "lo recontó", t_nova: "frase nueva",
+      del: "borrar", delConfirm: "confirmar borrar", delFail: "no se pudo borrar",
+      noDb: "Esta vista no puede guardar mensajes. Abre el enlace en claude.ai con tu sesión iniciada.", noWrite: "Puedes ver el mapa, pero tu acceso no permite enviar un mensaje. Pide acceso de Colaborador a quien te mandó el enlace.",
+      noSite: "El mapa todavía no está conectado a su base de datos. Puedes mirar, pero aún no enviar.",
+      loading: "Cargando los mensajes…", loadFail: "No se pudieron cargar los mensajes ahora.", sending: "Enviando…", sent: "Tu mensaje salió. Tu punto parpadea en el globo.",
+      already: "Ya encendiste tu punto en este dispositivo. Ahora pasa el enlace.",
+      full: "El mapa está lleno por ahora. Avisa a quien te mandó el enlace.", sendFail: "No se pudo enviar ahora. Inténtalo de nuevo en unos segundos.",
+      introQ: "¿Hasta dónde puede llegar *una frase tuya*?", introSub: "Una persona, una frase, un enlace. Mírala cruzar ciudades, idiomas y océanos, y descubre cómo cambia en el camino.", introGo: "Lanzar mi frase", invQ: "Una frase *viajó hasta ti.*", invSub: "Alguien te eligió para recibirla. Ábrela, léela y decide si sigue su viaje.", invGo: "Abrir el mensaje",
+      introEye: "Invisible Signals · el teléfono descompuesto de la era digital", leg2b: "el hilo: el mensaje vibrando de quien lo envió a quien lo recibió", stP: "países", stK: "km recorridos",
+      passTitle: "Sellos del pasaporte", passEmpty: "Todavía no hay sellos. Cada país nuevo recibe el suyo.", reachTitle: "Hasta dónde llegó tu frase", rPl: "personas alcanzadas",
+      b_first: "Punto encendido", b_link: "Primer eslabón", b_ocean: "Cruzó el océano", b_3c: "3 países", b_1k: "1.000 km", b_10k: "10.000 km",
+      toastNew: "Una frase acaba de encenderse en {city}", toastMine: "¡Tu frase llegó a {city}!", toastSent: "¡Punto encendido! Ahora manda el enlace a alguien.", sound: "sonido",
+      aboutNav: "El proyecto ↓", dashTitle: "Panel en vivo", dashSub: "Todo lo que está en el mapa, contado mientras sucede. Cuanta más gente participa, más nítido es el retrato.",
+      dLang: "En qué idioma escribe la gente", dMode: "Qué hace la gente con la frase que recibe", dLadder: "El escalón de hoy en la escalera de 0 a 10",
+      dLadderNote: "El promedio de un país solo aparece con 5 respuestas o más.", dMean: "promedio {m} · {n} respuestas", dEmpty: "Todavía sin datos.",
+      aboutTitle: "Detrás del teléfono descompuesto", ab1h: "Qué es", ab2h: "Por qué existe", ab3h: "Qué medimos", ab4h: "Qué guardamos",
+      ab1: "Una frase, un refrán, un consejo o una lección de vida pasa de persona en persona, de ciudad en ciudad, a veces de idioma en idioma. Cada persona decide: pasarla igual, contarla a su manera o empezar otra.",
+      ab2: "Es una prueba de Invisible Signals, una investigación sobre el florecimiento humano: qué hace que una vida vaya bien y qué no ven las preguntas de siempre. Una de las dudas es el idioma: ¿“feliz”, “happy” y “šťastný” significan lo mismo? Aquí se puede ver una frase cruzar idiomas y cambiar en el camino.",
+      ab3: "Hasta dónde llega una frase, cuántas veces se pasa igual o se recuenta, por qué idiomas viaja y, si la persona quiere responder, el escalón de hoy en la escalera de 0 a 10, la misma pregunta que usan grandes estudios internacionales. Después vendrán otras preguntas, una a la vez.",
+      ab4: "La frase, la ciudad, el idioma de la página y, si respondes, tu escalón. Nada de nombre, correo ni dirección. El escalón nunca se muestra por persona, solo en conteos y promedios de grupo." },
+    it: { eyebrow: "Invisible Signals · telefono senza fili", h1a: "Una frase che", h1em: "daresti al mondo", h1b: ", passata di mano in mano.",
+      lede: "Scrivi un proverbio, un consiglio o qualcosa che la vita ti ha insegnato. Manda il link a qualcuno. Chi lo riceve può passarlo così com'è, raccontarlo a modo suo o iniziare un'altra frase. Sul globo, ogni messaggio viaggia da chi l'ha mandato a chi l'ha ricevuto.",
+      leg1: "qualcuno ha mandato un messaggio da questa città", stN: "messaggi", stD: "anelli nella catena più lunga",
+      feedTitle: "Il viaggio dei messaggi", feedEmpty: "Ancora nessun messaggio. Il primo accende il primo punto.", modesLegend: "Cosa fai con il messaggio che hai ricevuto?",
+      textLabel: "Un proverbio, un consiglio o un'esperienza, fino a 280 caratteri", textPh: "Es.: Nessuno fiorisce da solo.",
+      cityLabel: "Da dove mandi? Scrivi la tua città. Solo la città, mai l'indirizzo.", placePh: "Inizia a scrivere: Goiânia, Roma, Praga…", noPlace: "Nessuna città trovata. Prova un altro nome.",
+      q1: "Immagina una scala da 0 a 10, dove 10 è la vita migliore possibile per te. Su quale gradino sei oggi?", opt: "(facoltativo)", end0: "0 · vita peggiore possibile", end10: "10 · migliore",
+      consent: "Accetto di partecipare a questo test. La mia frase è visibile a chi apre la mappa, senza il mio nome, solo con la città. Non scriverò dati personali di nessuno.", go: "Manda la mia frase",
+      shareTitle: "Adesso passalo", shareText: "Manda questo link a una persona. Quando risponderà, una luce partirà dal tuo punto verso il suo.", copy: "Copia link", copied: "Copiato", selected: "Selezionato: copia con Ctrl+C",
+      note: "Prototipo di prova del progetto Invisible Signals. Può mandare messaggi solo chi ha accesso da Collaboratore a questo link su claude.ai. Chi non ha effettuato l'accesso vede la pagina ma non può accendere un punto.",
+      noteSite: "Prototipo di prova del progetto Invisible Signals. Chiunque abbia il link può partecipare, senza accesso e senza registrazione.",
+      titleNew: "La tua frase per il mondo", titleTurn: "Adesso tocca a te", recvFrom: "Qualcuno a {city} ti ha passato questo messaggio:", startedIn: "è partito da {city}",
+      m_igual: "Passarlo così com'è", m_recontada: "Raccontarlo a modo mio", m_nova: "Iniziare un'altra frase", t_igual: "passato uguale", t_recontada: "raccontato di nuovo", t_nova: "frase nuova",
+      del: "elimina", delConfirm: "conferma eliminazione", delFail: "eliminazione non riuscita",
+      noDb: "Questa visualizzazione non può salvare messaggi. Apri il link su claude.ai dopo aver effettuato l'accesso.", noWrite: "Puoi vedere la mappa, ma il tuo accesso non permette di mandare un messaggio. Chiedi l'accesso da Collaboratore a chi ti ha mandato il link.",
+      noSite: "La mappa non è ancora collegata al suo database. Puoi guardare, ma non ancora mandare.",
+      loading: "Caricamento dei messaggi…", loadFail: "Non è stato possibile caricare i messaggi adesso.", sending: "Invio…", sent: "Il tuo messaggio è partito. Il tuo punto lampeggia sul globo.",
+      already: "Hai già acceso il tuo punto su questo dispositivo. Ora passa il link.",
+      full: "La mappa per ora è piena. Avvisa chi ti ha mandato il link.", sendFail: "Invio non riuscito. Riprova tra qualche secondo.",
+      introQ: "Fin dove può arrivare *una tua frase*?", introSub: "Una persona, una frase, un link. Guardala attraversare città, lingue e oceani, e scopri come cambia lungo la strada.", introGo: "Lancia la mia frase", invQ: "Una frase *ha viaggiato fino a te.*", invSub: "Qualcuno ti ha scelto per riceverla. Aprila, leggila e decidi se continua il viaggio.", invGo: "Apri il messaggio",
+      introEye: "Invisible Signals · il telefono senza fili dell'era digitale", leg2b: "lo spago: il messaggio che vibra da chi l'ha mandato a chi l'ha ricevuto", stP: "paesi", stK: "km percorsi",
+      passTitle: "Timbri sul passaporto", passEmpty: "Ancora nessun timbro. Ogni nuovo paese riceve il suo.", reachTitle: "Fin dove è arrivata la tua frase", rPl: "persone raggiunte",
+      b_first: "Punto acceso", b_link: "Primo anello", b_ocean: "Ha attraversato l'oceano", b_3c: "3 paesi", b_1k: "1.000 km", b_10k: "10.000 km",
+      toastNew: "Una frase si è appena accesa a {city}", toastMine: "La tua frase è arrivata a {city}!", toastSent: "Punto acceso! Ora manda il link a qualcuno.", sound: "suono",
+      aboutNav: "Il progetto ↓", dashTitle: "Pannello dal vivo", dashSub: "Tutto ciò che è sulla mappa, contato mentre accade. Più persone partecipano, più nitido diventa il ritratto.",
+      dLang: "In che lingua scrivono le persone", dMode: "Cosa fanno le persone con la frase ricevuta", dLadder: "Il gradino di oggi sulla scala da 0 a 10",
+      dLadderNote: "La media di un paese appare solo con almeno 5 risposte.", dMean: "media {m} · {n} risposte", dEmpty: "Ancora nessun dato.",
+      aboutTitle: "Dietro il telefono senza fili", ab1h: "Che cos'è", ab2h: "Perché esiste", ab3h: "Cosa misuriamo", ab4h: "Cosa conserviamo",
+      ab1: "Una frase, un proverbio, un consiglio o una lezione di vita passa di persona in persona, di città in città, a volte di lingua in lingua. Ognuno decide: passarla così com'è, raccontarla a modo suo o iniziarne un'altra.",
+      ab2: "È un test di Invisible Signals, una ricerca sulla fioritura umana: cosa fa andare bene una vita, e cosa le solite domande non vedono. Una delle domande aperte è la lingua: “feliz”, “happy” e “šťastný” vogliono dire la stessa cosa? Qui si vede una frase attraversare le lingue e cambiare lungo la strada.",
+      ab3: "Fin dove arriva una frase, quante volte viene passata uguale o raccontata di nuovo, in quali lingue viaggia e, se la persona vuole rispondere, il gradino di oggi sulla scala da 0 a 10, la stessa domanda usata nei grandi studi internazionali. Poi arriveranno altre domande, una alla volta.",
+      ab4: "La frase, la città, la lingua della pagina e, se rispondi, il tuo gradino. Niente nome, e-mail o indirizzo. Il gradino non viene mai mostrato per persona, solo in conteggi e medie di gruppo." }
+  };
+  const LANGS = [["pt", "PT"], ["en", "EN"], ["fr", "FR"], ["es", "ES"], ["it", "IT"]];
+  let lang = "pt";
+  const navLang = () => (navigator.language || "pt").slice(0, 2).toLowerCase();
+  try { const s = localStorage.getItem("tsf-lang"); if (s && I18N[s]) lang = s; else if (I18N[navLang()]) lang = navLang(); } catch { if (I18N[navLang()]) lang = navLang(); }
+  const t = (k, v = {}) => (I18N[lang][k] || I18N.pt[k] || k).replace(/\{(\w+)\}/g, (_, x) => v[x] ?? "");
+  const MODES = ["igual", "recontada", "nova"];
+  const $ = id => document.getElementById(id);
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let msgKey = null;   // the status message currently shown, so it can be re-translated
+  const say = k => { msgKey = k; $("msg").textContent = k ? t(k) : ""; };
+  $("note").dataset.i18n = SITE ? "noteSite" : "note";
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
+    $("text").placeholder = t("textPh"); $("place").placeholder = t("placePh");
+    [...$("modes").children].forEach(b => { b.textContent = t("m_" + b.dataset.v); });
+    [...$("langs").children].forEach(b => b.setAttribute("aria-pressed", String(b.dataset.l === lang)));
+    if (msgKey) $("msg").textContent = t(msgKey);
+    $("snd").textContent = "♪ " + t("sound");
+    renderIntro(); render();
+  }
+  for (const [l, label] of LANGS) { const b = document.createElement("button"); b.type = "button"; b.dataset.l = l; b.textContent = label; b.onclick = () => { lang = l; try { localStorage.setItem("tsf-lang", l); } catch {} applyLang(); }; $("langs").appendChild(b); }
+  $("toAbout").onclick = () => $("about").scrollIntoView({ behavior: reduce ? "auto" : "smooth" });
+  const MAXLEN = 280;
+
+  // ---------- small helpers: names, numbers, distance ----------
+  const RN = {}, LN = {};
+  const country = c => { if (!c) return ""; try { RN[lang] = RN[lang] || new Intl.DisplayNames([lang], { type: "region" }); return RN[lang].of(c) || c; } catch { return c; } };
+  const langName = l => { try { LN[lang] = LN[lang] || new Intl.DisplayNames([lang], { type: "language" }); return LN[lang].of(l) || l; } catch { return l; } };
+  const nf = (n, d = 0) => { try { return new Intl.NumberFormat(lang, { maximumFractionDigits: d, minimumFractionDigits: d }).format(n); } catch { return n.toFixed(d); } };
+  const hash = s => [...s].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 7) >>> 0;
+  const fold = s => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  const toVec = (lat, lon) => { const p = lat * Math.PI / 180, l = lon * Math.PI / 180; return [Math.cos(p) * Math.cos(l), Math.cos(p) * Math.sin(l), Math.sin(p)]; };
+  const km = (p, q) => { const a = toVec(p.lat, p.lon), b = toVec(q.lat, q.lon); return 6371 * Math.acos(Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2]))); };
+  const placeKey = p => p.lat.toFixed(2) + "," + p.lon.toFixed(2);
+
+  // ---------- game feel: small "plim" sound, shake, toast ----------
+  let soundOn = true; try { soundOn = localStorage.getItem("tsf-sound") !== "0"; } catch {}
+  let AC = null;
+  function ding(kind) {   // only after the viewer has clicked once; "soft" never starts audio on its own
+    if (!soundOn) return;
+    try {
+      if (!AC) { if (kind === "soft") return; AC = new (window.AudioContext || window.webkitAudioContext)(); }
+      if (AC.state === "suspended") AC.resume();
+      const now = AC.currentTime, out = AC.createGain(); out.gain.value = kind === "soft" ? .05 : .11; out.connect(AC.destination);
+      const tone = (f, at, dur, type) => { const o = AC.createOscillator(), g = AC.createGain(); o.type = type; o.frequency.setValueAtTime(f, now + at); g.gain.setValueAtTime(.0001, now + at); g.gain.exponentialRampToValueAtTime(1, now + at + .012); g.gain.exponentialRampToValueAtTime(.0001, now + at + dur); o.connect(g); g.connect(out); o.start(now + at); o.stop(now + at + dur + .05); };
+      if (kind === "big") { [660, 880, 1320].forEach((f, i) => tone(f, i * .09, .6, "triangle")); tone(1985, .3, .5, "sine"); }
+      else if (kind === "open") { tone(523, 0, .5, "triangle"); tone(784, .12, .6, "triangle"); }
+      else tone(1320, 0, .45, "triangle");
+    } catch {}
+  }
+  $("snd").setAttribute("aria-pressed", String(soundOn));
+  $("snd").onclick = () => { soundOn = !soundOn; try { localStorage.setItem("tsf-sound", soundOn ? "1" : "0"); } catch {} $("snd").setAttribute("aria-pressed", String(soundOn)); if (soundOn) ding("ping"); };
+  function shake(big) {
+    try { navigator.vibrate && navigator.vibrate(big ? [60, 40, 90] : 40); } catch {}
+    if (reduce) return;
+    const w = document.querySelector(".wrap"); w.classList.remove("shake", "shake-big"); void w.offsetWidth; w.classList.add(big ? "shake-big" : "shake");
+  }
+  let toastT = null;
+  function toast(text, big) {
+    const el = $("toast"); el.textContent = text; el.className = "toast" + (big ? " big" : ""); el.hidden = false;
+    el.style.animation = "none"; void el.offsetWidth; el.style.animation = "";
+    clearTimeout(toastT); toastT = setTimeout(() => { el.hidden = true; }, 4200);
+  }
+
+  // ---------- form ----------
+  let mode = "nova", ans1 = null, parent = null, place = null;
+  for (let i = 0; i <= 10; i++) { const b = document.createElement("button"); b.type = "button"; b.textContent = i; b.setAttribute("aria-pressed","false"); b.onclick = () => { ans1 = ans1 === i ? null : i; [...$("q1").children].forEach(x => x.setAttribute("aria-pressed", String(ans1 !== null && x === b))); }; $("q1").appendChild(b); }
+  for (const v of MODES) { const b = document.createElement("button"); b.type = "button"; b.textContent = t("m_" + v); b.dataset.v = v; b.setAttribute("aria-pressed","false"); b.onclick = () => setMode(v); $("modes").appendChild(b); }
+  function setMode(v) {
+    mode = v; [...$("modes").children].forEach(x => x.setAttribute("aria-pressed", String(x.dataset.v === v)));
+    const tx = $("text");
+    if (v === "igual" && parent) { tx.value = parent.msg; tx.readOnly = true; }
+    else if (v === "recontada" && parent) { tx.readOnly = false; if (!tx.value || tx.value === parent.msg) tx.value = parent.msg; }
+    else { tx.readOnly = false; if (parent && tx.value === parent.msg) tx.value = ""; }
+    count(); check();
+  }
+  const count = () => { $("count").textContent = `${$("text").value.length} / ${MAXLEN}`; };
+  $("text").oninput = () => { count(); check(); };
+  $("ok").onchange = check;
+  let canWrite = true, sentHere = false;
+  function check() {
+    const txt = $("text").value.trim();
+    const changedOk = mode !== "recontada" || (parent && txt !== parent.msg.trim());
+    $("go").disabled = !(canWrite && !sentHere && txt.length >= 3 && changedOk && place && $("ok").checked);
+  }
+
+  // ---------- city search: instant local suggestions + a world city index (Open-Meteo geocoding) when reachable ----------
+  const pEl = $("place"), sEl = $("sugg");
+  let sugg = [], active = -1, geoOK = true, geoSeq = 0, geoT = null;
+  function setActive(i) {
+    active = i; [...sEl.children].forEach((li, k) => li.setAttribute("aria-selected", String(k === i)));
+    if (i >= 0 && sEl.children[i]) { pEl.setAttribute("aria-activedescendant", sEl.children[i].id); sEl.children[i].scrollIntoView({ block: "nearest" }); } else pEl.removeAttribute("aria-activedescendant");
+  }
+  function closeSugg() { sEl.hidden = true; pEl.setAttribute("aria-expanded", "false"); setActive(-1); }
+  function showSugg(items, done) {
+    sugg = items; sEl.replaceChildren(); active = -1;
+    if (!items.length) {
+      if (done && pEl.value.trim().length >= 2) { const li = document.createElement("li"); li.className = "none"; li.textContent = t("noPlace"); sEl.append(li); sEl.hidden = false; pEl.setAttribute("aria-expanded", "true"); }
+      else closeSugg();
+      return;
+    }
+    items.forEach((it, i) => {
+      const li = document.createElement("li"); li.id = "sg" + i; li.setAttribute("role", "option"); li.setAttribute("aria-selected", "false");
+      const b = document.createElement("b"); b.textContent = it.n; const s = document.createElement("span"); s.textContent = [it.sub, country(it.cc)].filter(Boolean).join(", ");
+      li.append(b, s); li.onpointerdown = e => { e.preventDefault(); pick(it); }; sEl.append(li);
+    });
+    sEl.hidden = false; pEl.setAttribute("aria-expanded", "true");
+  }
+  function pick(it) {
+    place = { n: it.n.slice(0, 80), cc: /^[A-Z]{2}$/.test(it.cc || "") ? it.cc : null, lat: Math.round(it.lat * 100) / 100, lon: Math.round(it.lon * 100) / 100 };
+    pEl.value = it.n + (it.cc ? " · " + country(it.cc) : ""); pEl.classList.add("picked"); closeSugg(); check();
+  }
+  pEl.oninput = () => {
+    place = null; pEl.classList.remove("picked"); check();
+    const q = pEl.value.trim(); clearTimeout(geoT);
+    if (q.length < 2) { closeSugg(); return; }
+    const fq = fold(q), seenN = new Set();
+    const local = CITIES.filter(c => fold(c[0]).startsWith(fq)).concat(CITIES.filter(c => !fold(c[0]).startsWith(fq) && fold(c[0]).includes(fq)))
+      .filter(c => { const k = c[1] + "," + c[2]; if (seenN.has(k)) return false; seenN.add(k); return true; })
+      .slice(0, 6).map(c => ({ n: c[0], lat: c[1], lon: c[2], cc: c[3], sub: "" }));
+    showSugg(local, !geoOK);
+    if (!geoOK) return;
+    const my = ++geoSeq;
+    geoT = setTimeout(async () => {
+      try {
+        const r = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=${lang}&format=json`);
+        if (!r.ok) throw new Error("geo"); const j = await r.json(); if (my !== geoSeq) return;
+        const remote = (Array.isArray(j.results) ? j.results : []).filter(x => x && typeof x.name === "string" && Number.isFinite(x.latitude) && Number.isFinite(x.longitude))
+          .map(x => ({ n: x.name, lat: x.latitude, lon: x.longitude, cc: typeof x.country_code === "string" ? x.country_code.toUpperCase() : null, sub: typeof x.admin1 === "string" ? x.admin1 : "" }));
+        const seen = new Set();
+        showSugg([...remote, ...local].filter(it => { const k = fold(it.n) + "|" + (it.cc || ""); if (seen.has(k)) return false; seen.add(k); return true; }).slice(0, 7), true);
+      } catch { if (my !== geoSeq) return; geoOK = false; showSugg(local, true); }
+    }, 250);
+  };
+  pEl.onkeydown = e => {
+    if (sEl.hidden || !sugg.length) { if (e.key === "Enter") e.preventDefault(); return; }
+    if (e.key === "ArrowDown") { e.preventDefault(); setActive((active + 1) % sugg.length); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActive((active - 1 + sugg.length) % sugg.length); }
+    else if (e.key === "Enter") { e.preventDefault(); pick(sugg[Math.max(0, active)]); }
+    else if (e.key === "Escape") closeSugg();
+  };
+  pEl.onblur = () => setTimeout(closeSugg, 120);
+
+  const refMatch = /^#c-([a-z0-9]{4,12})$/.exec(location.hash || "");
+  const REF = refMatch ? refMatch[1] : null;
+
+  // ---------- data ----------
+  let points = [];   // {id, code, ref, place, cc, lat, lon, msg, mode, q1, lang, at}
+  let myCode = null, uid = null, db = null, owner = false, ladderSB = null;
+  let seenIds = new Set(), loadedOnce = false, stamped = new Set(), myReachIds = new Set();
+  const clean = d => {
+    const lat = Number(d.lat), lon = Number(d.lon);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180) return null;
+    const pl = typeof d.place === "string" ? d.place.trim().slice(0, 80) : ""; if (!pl) return null;
+    const ok = s => typeof s === "string" && /^[a-z0-9]{4,12}$/.test(s);
+    const msg = typeof d.msg === "string" ? d.msg.slice(0, MAXLEN) : "";
+    const q1 = Number(d.q1);
+    return { code: ok(d.code) ? d.code : null, ref: ok(d.ref) ? d.ref : null, place: pl, cc: typeof d.cc === "string" && /^[A-Z]{2}$/.test(d.cc) ? d.cc : null,
+             lat, lon, msg, mode: MODES.includes(d.mode) ? d.mode : "nova", lang: I18N[d.lang] ? d.lang : null,
+             q1: d.q1 !== null && d.q1 !== undefined && Number.isInteger(q1) && q1 >= 0 && q1 <= 10 ? q1 : null, at: typeof d.at === "string" ? d.at : "" };
+  };
+  function chainDepth(byCode) {
+    let best = 0;
+    for (const p of points) { let d = 0, cur = p; const seen = new Set(); while (cur && cur.ref && byCode.has(cur.ref) && !seen.has(cur.ref)) { seen.add(cur.ref); cur = byCode.get(cur.ref); d++; } best = Math.max(best, d); }
+    return best;
+  }
+  function render() {
+    const byCode = new Map(points.filter(p => p.code).map(p => [p.code, p]));
+    const ctry = new Map(); for (const p of points) if (p.cc) ctry.set(p.cc, (ctry.get(p.cc) || 0) + 1);
+    const totalKm = points.reduce((s, p) => { const f = p.ref && byCode.get(p.ref); return f ? s + km(f, p) : s; }, 0);
+    $("sN").textContent = points.length; $("sP").textContent = ctry.size; $("sK").textContent = nf(totalKm); $("sD").textContent = chainDepth(byCode);
+    renderPassport(ctry); renderReach(); renderDash();
+    // received message (the person who invited this viewer)
+    parent = REF ? byCode.get(REF) || null : null;
+    $("formTitle").textContent = t("titleNew");
+    const mine = points.find(p => p.id === uid);
+    if (parent && !(mine && mine.code === REF)) {
+      $("received").hidden = false; $("modeBox").hidden = false;
+      $("recvFrom").textContent = t("recvFrom", { city: parent.place });
+      $("recvText").textContent = `“${parent.msg}”`;
+      $("formTitle").textContent = t("titleTurn");
+      if (!document.querySelector('#modes [aria-pressed="true"]') && !mine) setMode("igual");
+    }
+    // feed: newest first, at most 12
+    const feed = $("feed"); feed.replaceChildren();
+    const list = [...points].sort((a, b) => (b.at || "").localeCompare(a.at || "")).slice(0, 12);
+    $("feedEmpty").hidden = list.length > 0;
+    for (const p of list) {
+      const from = p.ref && byCode.get(p.ref);
+      const hop = document.createElement("div"); hop.className = "hop";
+      const route = document.createElement("div"); route.className = "route";
+      const r = document.createElement("span"); r.textContent = from ? `${from.place} → ${p.place} · ${nf(km(from, p))} km` : t("startedIn", { city: p.place });
+      const tag = document.createElement("span"); tag.className = "tag " + p.mode; tag.textContent = t("t_" + p.mode);
+      route.append(r, tag);
+      if (owner && !SB) { const del = document.createElement("button"); del.type = "button"; del.className = "del"; del.textContent = t("del"); del.onclick = () => removePoint(p.id, del); route.append(del); }
+      const q = document.createElement("div"); q.className = "quote"; q.textContent = `“${p.msg}”`;
+      hop.append(route, q); feed.append(hop);
+    }
+    if (mine && mine.code) { myCode = mine.code; showShare(); if (SB) { sentHere = true; check(); } }
+  }
+  function renderPassport(ctry) {
+    const box = $("stamps"); box.replaceChildren(); $("passEmpty").hidden = ctry.size > 0;
+    [...ctry].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).forEach(([c, n]) => {
+      const s = document.createElement("div"); s.className = "stamp" + (loadedOnce && !stamped.has(c) ? " new" : ""); s.style.setProperty("--r", ((hash(c) % 11) - 5) + "deg");
+      const b = document.createElement("b"); b.textContent = c;
+      const nm = document.createElement("span"); nm.textContent = country(c);
+      const k = document.createElement("i"); k.textContent = "× " + n;
+      s.append(b, nm, k); box.append(s);
+    });
+    stamped = new Set(ctry.keys());
+  }
+  function reachOf(root) {   // everyone downstream of one sentence: who continued it, and who continued theirs
+    const kids = new Map(); for (const p of points) if (p.ref) { if (!kids.has(p.ref)) kids.set(p.ref, []); kids.get(p.ref).push(p); }
+    const r = { ids: new Set(), countries: new Set(root.cc ? [root.cc] : []), km: 0, ocean: false };
+    const queue = [root], seen = new Set([root.id]);
+    while (queue.length) {
+      const cur = queue.shift();
+      for (const k of (cur.code && kids.get(cur.code)) || []) {
+        if (seen.has(k.id)) continue; seen.add(k.id); r.ids.add(k.id); if (k.cc) r.countries.add(k.cc); r.km += km(cur, k);
+        if (k.cc && root.cc && farApart(k.cc, root.cc)) r.ocean = true; queue.push(k);
+      }
+    }
+    return r;
+  }
+  function renderReach() {
+    const mine = points.find(p => p.id === uid);
+    if (!mine || !mine.code) { $("reach").hidden = true; myReachIds = new Set(); return; }
+    const r = reachOf(mine); myReachIds = r.ids; $("reach").hidden = false;
+    $("rP").textContent = r.ids.size; $("rC").textContent = r.countries.size; $("rK").textContent = nf(r.km);
+    const bx = $("badges"); bx.replaceChildren();
+    for (const [k, on] of [["b_first", true], ["b_link", r.ids.size >= 1], ["b_ocean", r.ocean], ["b_3c", r.countries.size >= 3], ["b_1k", r.km >= 1000], ["b_10k", r.km >= 10000]]) {
+      const s = document.createElement("span"); s.className = "badge" + (on ? " on" : ""); s.textContent = (on ? "★ " : "☆ ") + t(k); bx.append(s);
+    }
+  }
+  // ---------- live dashboard ----------
+  function bars(box, rows) {
+    box.replaceChildren(); const total = rows.reduce((s, r) => s + r[1], 0);
+    if (!total) { const p = document.createElement("p"); p.textContent = t("dEmpty"); box.append(p); return; }
+    for (const [label, n, color] of rows) {
+      const row = document.createElement("div"); row.className = "bar";
+      const l = document.createElement("span"); l.textContent = label; l.title = label;
+      const tr = document.createElement("div"); tr.className = "track"; const f = document.createElement("div"); f.className = "fill"; f.style.width = (100 * n / total) + "%"; if (color) f.style.background = color; tr.append(f);
+      const v = document.createElement("b"); v.textContent = `${n} · ${nf(100 * n / total)}%`;
+      row.append(l, tr, v); box.append(row);
+    }
+  }
+  function ladderStats() {
+    if (SB) return ladderSB || { hist: Array(11).fill(0), by: [] };
+    const hist = Array(11).fill(0), per = new Map();
+    for (const p of points) if (p.q1 !== null) { hist[p.q1]++; if (p.cc) { const a = per.get(p.cc) || [0, 0]; a[0]++; a[1] += p.q1; per.set(p.cc, a); } }
+    return { hist, by: [...per].filter(([, a]) => a[0] >= 5).map(([cc, a]) => ({ cc, n: a[0], mean: a[1] / a[0] })) };
+  }
+  function renderDash() {
+    const lc = new Map(); for (const p of points) if (p.lang) lc.set(p.lang, (lc.get(p.lang) || 0) + 1);
+    bars($("dLangBox"), [...lc].sort((a, b) => b[1] - a[1]).map(([l, n]) => [langName(l), n]));
+    const recv = points.filter(p => p.ref);
+    bars($("dModeBox"), MODES.map(m => [t("t_" + m), recv.filter(p => p.mode === m).length, m === "igual" ? "var(--mute)" : m === "nova" ? "var(--glow)" : "var(--link)"]));
+    const L = ladderStats(), n = L.hist.reduce((s, x) => s + x, 0), mx = Math.max(1, ...L.hist);
+    const h = $("hist"), hx = $("histX");
+    if (h.children.length !== 11) { h.replaceChildren(); hx.replaceChildren(); for (let i = 0; i <= 10; i++) { h.append(document.createElement("div")); const s = document.createElement("span"); s.textContent = i; hx.append(s); } }
+    L.hist.forEach((v, i) => { h.children[i].style.height = (100 * v / mx) + "%"; h.children[i].title = `${i}: ${v}`; });
+    $("dLadderMean").textContent = n ? t("dMean", { m: nf(L.hist.reduce((s, v, i) => s + v * i, 0) / n, 1), n }) : t("dEmpty");
+    const by = $("dLadderBy"); by.replaceChildren();
+    for (const r of [...L.by].sort((a, b) => b.n - a.n)) {
+      const row = document.createElement("div"); row.className = "bar";
+      const l = document.createElement("span"); l.textContent = country(r.cc);
+      const tr = document.createElement("div"); tr.className = "track"; const f = document.createElement("div"); f.className = "fill"; f.style.background = "var(--glow)"; f.style.width = (10 * r.mean) + "%"; tr.append(f);
+      const v = document.createElement("b"); v.textContent = `${nf(r.mean, 1)} · n ${r.n}`;
+      row.append(l, tr, v); by.append(row);
+    }
+  }
+  function arrivals(fresh) {   // a new point appeared while this page is open
+    for (const p of fresh.slice(0, 3)) {
+      const mineChain = myReachIds.has(p.id);
+      pulseAt(p, mineChain);
+      if (mineChain) { focusAt(p); shake(true); ding("big"); toast(t("toastMine", { city: p.place }), true); }
+      else { ding("soft"); toast(t("toastNew", { city: p.place })); }
+    }
+  }
+  function receive(docs, fromServer) {
+    points = docs.map(d => { const c = clean(d.data || {}); return c ? { id: String(d.id), ...c } : null; }).filter(Boolean);
+    const before = seenIds; seenIds = new Set(points.map(p => p.id));
+    render();
+    if (loadedOnce) arrivals(points.filter(p => !before.has(p.id) && p.id !== uid));
+    if (fromServer) loadedOnce = true;
+  }
+  async function removePoint(id, btn) {
+    if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.textContent = t("delConfirm"); return; }
+    try { await db.doc("pontos/" + id).delete(); } catch { btn.textContent = t("delFail"); }
+  }
+  function showShare() { if (!myCode) return; $("share").hidden = false; $("link").textContent = `${BASE}#c-${myCode}`; }
+  $("copy").onclick = () => {
+    const lnk = $("link").textContent;
+    navigator.clipboard?.writeText(lnk).then(() => { $("copy").textContent = t("copied"); }).catch(() => { const rg = document.createRange(); rg.selectNodeContents($("link")); const s = getSelection(); s.removeAllRanges(); s.addRange(rg); $("copy").textContent = t("selected"); });
+  };
+
+  // ---------- backends ----------
+  let sendDoc = null;
+  (async () => {
+    if (SITE) {
+      if (!SB) { canWrite = false; say("noSite"); check(); return; }
+      const H = { apikey: SB.key, Authorization: "Bearer " + SB.key };
+      try { uid = localStorage.getItem("tsf-me"); if (!uid) { uid = crypto.randomUUID(); localStorage.setItem("tsf-me", uid); } } catch { uid = crypto.randomUUID(); }
+      const COLS = "id,code,ref,place,cc,lat,lon,msg,mode,lang,at";
+      let busy = false;
+      async function pull() {
+        if (busy) return; busy = true;
+        try {
+          const r = await fetch(`${SB.url}/rest/v1/pontos?select=${COLS}&order=at.desc&limit=3000`, { headers: H }); if (!r.ok) throw new Error("load");
+          const rows = await r.json();
+          try {
+            const s = await fetch(`${SB.url}/rest/v1/rpc/ladder_counts`, { method: "POST", headers: { ...H, "Content-Type": "application/json" }, body: "{}" });
+            if (s.ok) {
+              const hist = Array(11).fill(0), per = new Map();
+              for (const x of await s.json()) { const q = Number(x.q1), n = Number(x.n); if (!Number.isInteger(q) || q < 0 || q > 10 || !Number.isFinite(n)) continue;
+                if (x.cc === "*") hist[q] += n; else if (typeof x.cc === "string" && /^[A-Z]{2}$/.test(x.cc)) { const a = per.get(x.cc) || [0, 0]; a[0] += n; a[1] += n * q; per.set(x.cc, a); } }
+              ladderSB = { hist, by: [...per].filter(([, a]) => a[0] >= 5).map(([cc, a]) => ({ cc, n: a[0], mean: a[1] / a[0] })) };
+            }
+          } catch {}
+          if (msgKey === "loadFail" || msgKey === "loading") say(null);
+          receive(Array.isArray(rows) ? rows.map(x => ({ id: x.id, data: x })) : [], true);
+        } catch { if (!points.length) say("loadFail"); } finally { busy = false; }
+      }
+      sendDoc = async doc => {
+        const r = await fetch(`${SB.url}/rest/v1/pontos`, { method: "POST", headers: { ...H, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify({ id: uid, ...doc }) });
+        if (r.status === 409) { const e = new Error("dup"); e.code = "dup"; throw e; }
+        if (!r.ok) throw new Error("send");
+        await pull();
+      };
+      check(); pull(); setInterval(() => { if (!document.hidden) pull(); }, 8000);
+      document.addEventListener("visibilitychange", () => { if (!document.hidden) pull(); });
+      return;
+    }
+    const claude = window.claude;
+    db = claude ? await claude.use("db") : null;
+    const user = claude ? await claude.use("user") : null;
+    if (!db) { canWrite = false; say("noDb"); check(); return; }
+    uid = user ? await user.id() : null;
+    owner = user ? !!(await user.isOwner()) : false;
+    const cw = user ? await user.can("data.write") : null;
+    if (!uid || cw === false) { canWrite = false; say("noWrite"); check(); }
+    const timer = setTimeout(() => { if (!points.length && !msgKey) say("loading"); }, 10000);
+    sendDoc = async doc => { await db.doc("pontos/" + uid).set({ ...doc, v: 3, at: new Date().toISOString() }); };
+    db.collection("pontos").onSnapshot(snap => {
+      if (!snap.metadata.fromCache) { clearTimeout(timer); if (msgKey === "loading") say(null); }
+      receive(snap.docs.map(d => ({ id: d.id, data: d.data() })), !snap.metadata.fromCache);
+    }, () => { clearTimeout(timer); say("loadFail"); });
+  })();
+
+  $("form").onsubmit = async e => {
+    e.preventDefault(); if ($("go").disabled || !sendDoc || !uid || !place) return;
+    $("go").disabled = true; say("sending");
+    const code = myCode || Array.from(crypto.getRandomValues(new Uint8Array(6)), b => "abcdefghijkmnpqrstuvwxyz23456789"[b % 32]).join("");
+    const prev = points.find(p => p.id === uid);
+    const ref = prev && prev.ref ? prev.ref : (parent && REF !== code ? REF : null);
+    const md = ref ? mode : "nova";
+    const msg = (md === "igual" && parent ? parent.msg : $("text").value.trim()).slice(0, MAXLEN);
+    const here = { ...place };
+    try {
+      await sendDoc({ code, ref, place: here.n, cc: here.cc, lat: here.lat, lon: here.lon, msg, mode: md, q1: ans1, lang });
+      myCode = code; myPlace = here;
+      say("sent"); showShare();
+      focusAt(here); pulseAt(here, true); shake(true); ding("big"); toast(t("toastSent"), true);
+      if (SB) sentHere = true;
+    } catch (err) {
+      if (err && err.code === "dup") { sentHere = true; say("already"); }
+      else say(err && err.code === "quota_exceeded" ? "full" : "sendFail");
+    } finally { check(); }
+  };
+
+  // ---------- globe ----------
+  const cv = $("globe"), ctx = cv.getContext("2d");
+  let spin = 50 * Math.PI / 180, tilt = -15 * Math.PI / 180, myPlace = null, drag = null;
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const C = { line: css("--line"), glow: css("--glow"), link: css("--link"), deep: css("--deep"), mute: css("--mute"), twine: css("--twine") };
+  const rings = []; let target = null;
+  function pulseAt(p, big) { rings.push({ lat: p.lat, lon: p.lon, t0: performance.now(), big }); if (rings.length > 12) rings.shift(); }
+  function focusAt(p) { target = { s: p.lon * Math.PI / 180, t: Math.max(-1.2, Math.min(1.2, p.lat * Math.PI / 180)) }; }
+  function rot(v) {
+    const cs = Math.cos(-spin), sn = Math.sin(-spin); const x = v[0] * cs - v[1] * sn, y = v[0] * sn + v[1] * cs, z = v[2];
+    const ct = Math.cos(tilt), st = Math.sin(tilt); return [x * ct + z * st, y, -x * st + z * ct];
+  }
+  const LAT = []; for (let i = 0; i < 900; i++) { const y = 1 - (i + .5) * 2 / 900, r = Math.sqrt(1 - y * y), a = i * 2.399963; LAT.push([r * Math.cos(a), r * Math.sin(a), y]); }
+  function arcPoint(a, b, om, s) {
+    let v; if (om < 1e-6) v = a; else { const w1 = Math.sin((1 - s) * om) / Math.sin(om), w2 = Math.sin(s * om) / Math.sin(om); v = [a[0] * w1 + b[0] * w2, a[1] * w1 + b[1] * w2, a[2] * w1 + b[2] * w2]; }
+    const lift = 1 + Math.min(.35, om * .12 + .05) * Math.sin(Math.PI * s); return rot(v.map(x => x * lift));
+  }
+  function draw(tm) {
+    const W = cv.width, R = W * 0.42, cx = W / 2, cy = W / 2, P = r => [cx + R * r[1], cy - R * r[2]];
+    ctx.clearRect(0, 0, W, W);
+    const g = ctx.createRadialGradient(cx - R * .3, cy - R * .35, R * .1, cx, cy, R); g.addColorStop(0, C.deep); g.addColorStop(1, "#070b17");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = C.line; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = C.line;
+    for (const v of LAT) { const r = rot(v); if (r[0] > 0) { ctx.globalAlpha = .25 + .55 * r[0]; ctx.fillRect(cx + R * r[1] - 1.2, cy - R * r[2] - 1.2, 2.4, 2.4); } }
+    ctx.globalAlpha = 1;
+    // travelling messages: a string (barbante) from sender to receiver, a blue voice riding it
+    const byCode = new Map(points.filter(p => p.code).map(p => [p.code, p]));
+    points.forEach((p, i) => {
+      const q = p.ref && byCode.get(p.ref); if (!q) return;
+      const a = toVec(q.lat, q.lon), b = toVec(p.lat, p.lon); const om = Math.acos(Math.max(-1, Math.min(1, a[0] * b[0] + a[1] * b[1] + a[2] * b[2])));
+      const head = reduce ? 1 : ((tm / 2600) + i * 0.37) % 1, N = 64, pts = [];
+      for (let k = 0; k <= N; k++) { const r = arcPoint(a, b, om, k / N); pts.push(r[0] > -0.15 ? P(r) : null); }
+      ctx.strokeStyle = C.twine; ctx.lineWidth = 1.8; ctx.globalAlpha = .6; ctx.beginPath(); let pen = false;
+      for (let k = 0; k <= N; k++) {
+        const pt = pts[k]; if (!pt) { pen = false; continue; }
+        let [X, Y] = pt; const nb = pts[k + 1] || pts[k - 1];
+        if (nb && !reduce) {
+          const d = k / N - head, amp = 7 * Math.exp(-(d * d) / .004) * Math.sin(d * 140);
+          let dx = nb[0] - X, dy = nb[1] - Y; if (!pts[k + 1]) { dx = -dx; dy = -dy; } const L = Math.hypot(dx, dy) || 1; X -= dy / L * amp; Y += dx / L * amp;
+        }
+        pen ? ctx.lineTo(X, Y) : ctx.moveTo(X, Y); pen = true;
+      }
+      ctx.stroke();
+      for (let k = 0; k < 14; k++) {
+        const s = head - k * 0.018; if (s < 0) break; const r = arcPoint(a, b, om, s); if (r[0] <= -0.15) continue;
+        const [X, Y] = P(r); ctx.globalAlpha = (1 - k / 14) * .9; ctx.fillStyle = C.link; ctx.beginPath(); ctx.arc(X, Y, 5 - k * .3, 0, 7); ctx.fill();
+      }
+      if (!reduce && head > .88 && pts[N]) {
+        const [X, Y] = pts[N], ph = (head - .88) / .12; ctx.strokeStyle = C.link; ctx.lineWidth = 2;
+        for (let k = 0; k < 3; k++) { const f = (ph + k / 3) % 1; ctx.globalAlpha = .6 * (1 - f); ctx.beginPath(); ctx.arc(X, Y, 8 + f * 26, 0, 7); ctx.stroke(); }
+      }
+      ctx.globalAlpha = 1;
+    });
+    // lit points: one per place, bigger when more people wrote from there
+    const cnt = new Map(); for (const p of points) { const k = placeKey(p); const c = cnt.get(k) || { lat: p.lat, lon: p.lon, n: 0 }; c.n++; cnt.set(k, c); }
+    const mine = myPlace || points.find(p => p.id === uid); const mineKey = mine ? placeKey(mine) : null;
+    for (const [k, c] of cnt) {
+      const r = rot(toVec(c.lat, c.lon)); if (r[0] <= 0) continue;
+      const [X, Y] = P(r), base = 5 + 2.5 * Math.sqrt(c.n), pulse = k === mineKey && !reduce ? 1 + .35 * Math.sin(tm / 260) : 1;
+      const gl = ctx.createRadialGradient(X, Y, 0, X, Y, base * 3.2 * pulse); gl.addColorStop(0, C.glow); gl.addColorStop(1, "rgba(255,207,90,0)");
+      ctx.globalAlpha = .55 * r[0] + .2; ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(X, Y, base * 3.2 * pulse, 0, 7); ctx.fill();
+      ctx.globalAlpha = 1; ctx.fillStyle = C.glow; ctx.beginPath(); ctx.arc(X, Y, base * .55, 0, 7); ctx.fill();
+    }
+    // shockwaves: a point just lit (bigger when it is yours or reached your chain)
+    const now = performance.now();
+    for (let i = rings.length - 1; i >= 0; i--) {
+      const rg = rings[i], age = (now - rg.t0) / (rg.big ? 2200 : 1500); if (age >= 1) { rings.splice(i, 1); continue; }
+      const r = rot(toVec(rg.lat, rg.lon)); if (r[0] <= 0) continue; const [X, Y] = P(r);
+      for (let k = 0; k < (rg.big ? 3 : 2); k++) { const a = age - k * .18; if (a <= 0) continue; ctx.globalAlpha = (1 - a) * .9; ctx.strokeStyle = C.glow; ctx.lineWidth = (rg.big ? 5 : 3) * (1 - a) + .5; ctx.beginPath(); ctx.arc(X, Y, 8 + a * (rg.big ? 150 : 80), 0, 7); ctx.stroke(); }
+    }
+    ctx.globalAlpha = 1;
+    if (target && !drag) {   // turn the globe to face a place
+      if (reduce) { spin = target.s; tilt = target.t; target = null; }
+      else { const d = Math.atan2(Math.sin(target.s - spin), Math.cos(target.s - spin)); spin += d * .06; tilt += (target.t - tilt) * .06; if (Math.abs(d) < .003 && Math.abs(target.t - tilt) < .003) target = null; }
+    } else if (!drag && !reduce) spin += 0.0018;
+    requestAnimationFrame(draw);
+  }
+  cv.addEventListener("pointerdown", e => { target = null; drag = { x: e.clientX, y: e.clientY, s: spin, t: tilt }; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener("pointermove", e => { if (!drag) return; const k = Math.PI / cv.clientWidth; spin = drag.s - (e.clientX - drag.x) * k; tilt = Math.max(-1.2, Math.min(1.2, drag.t + (e.clientY - drag.y) * k)); });
+  cv.addEventListener("pointerup", () => { drag = null; }); cv.addEventListener("pointercancel", () => { drag = null; });
+
+  // ---------- opening ----------
+  function renderIntro() {
+    const inv = !!REF, q = t(inv ? "invQ" : "introQ"), h = $("introQ"); h.replaceChildren();
+    let i = 0, hl = false;
+    for (const part of q.split("*")) {
+      for (const word of part.split(" ").filter(Boolean)) {
+        const w = document.createElement("span"); w.className = "w" + (hl ? " hl" : ""); w.textContent = word; w.style.animationDelay = (0.45 + i * 0.12) + "s";
+        h.append(w, document.createTextNode(" ")); i++;
+      }
+      hl = !hl;
+    }
+    const after = 0.45 + i * 0.12 + 0.25;
+    $("introSub").textContent = t(inv ? "invSub" : "introSub"); $("introSub").style.animationDelay = after + "s";
+    const b = $("introGo"); b.textContent = t(inv ? "invGo" : "introGo"); b.style.animationDelay = (after + 0.35) + "s"; b.classList.add("ready");
+  }
+  $("introGo").onclick = () => {
+    ding("open");
+    const el = $("intro"); if (reduce) { el.hidden = true; return; }
+    el.classList.add("leaving"); setTimeout(() => { el.hidden = true; }, 680);
+  };
+  (() => {  // a message crossing the night sky: stars, then one comet looping along an arc
+    const sk = $("sky"), c2 = sk.getContext("2d"); let W = 0, H = 0; const stars = [];
+    const size = () => { W = sk.width = sk.clientWidth * devicePixelRatio; H = sk.height = sk.clientHeight * devicePixelRatio; };
+    size(); addEventListener("resize", size);
+    for (let i = 0; i < 160; i++) stars.push([Math.random(), Math.random() * .8, Math.random() * 1.4 + .3, Math.random() * 6.28]);
+    const glow = css("--glow"), link = css("--link");
+    function frame(tm) {
+      if ($("intro").hidden) return;
+      c2.clearRect(0, 0, W, H);
+      for (const [x, y, r, ph] of stars) { c2.globalAlpha = reduce ? .6 : .35 + .35 * Math.sin(tm / 900 + ph); c2.fillStyle = "#cfd6f5"; c2.beginPath(); c2.arc(x * W, y * H, r * devicePixelRatio, 0, 7); c2.fill(); }
+      const A = [W * .12, H * .78], B = [W * .88, H * .70], Cc = [W * .5, H * .18];
+      const at = s => [(1 - s) * (1 - s) * A[0] + 2 * (1 - s) * s * Cc[0] + s * s * B[0], (1 - s) * (1 - s) * A[1] + 2 * (1 - s) * s * Cc[1] + s * s * B[1]];
+      c2.globalAlpha = .22; c2.strokeStyle = link; c2.lineWidth = 1.5 * devicePixelRatio; c2.beginPath();
+      for (let k = 0; k <= 60; k++) { const [x, y] = at(k / 60); k ? c2.lineTo(x, y) : c2.moveTo(x, y); } c2.stroke();
+      const head = reduce ? .999 : (tm / 4200) % 1;
+      for (let k = 0; k < 18; k++) { const s = head - k * .012; if (s < 0) break; const [x, y] = at(s); c2.globalAlpha = (1 - k / 18) * .95; c2.fillStyle = link; c2.beginPath(); c2.arc(x, y, (5 - k * .22) * devicePixelRatio, 0, 7); c2.fill(); }
+      for (const [Pp, lit] of [[A, 1], [B, head > .97 || reduce ? 1 : .25]]) {
+        const g = c2.createRadialGradient(Pp[0], Pp[1], 0, Pp[0], Pp[1], 26 * devicePixelRatio); g.addColorStop(0, glow); g.addColorStop(1, "rgba(255,207,90,0)");
+        c2.globalAlpha = .7 * lit; c2.fillStyle = g; c2.beginPath(); c2.arc(Pp[0], Pp[1], 26 * devicePixelRatio, 0, 7); c2.fill();
+        c2.globalAlpha = lit; c2.fillStyle = glow; c2.beginPath(); c2.arc(Pp[0], Pp[1], 4 * devicePixelRatio, 0, 7); c2.fill();
+      }
+      c2.globalAlpha = 1; requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  })();
+  applyLang(); count(); requestAnimationFrame(draw);
+})();
+</script>
+
+</body>
+</html>
