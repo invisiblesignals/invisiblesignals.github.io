@@ -39,3 +39,7 @@ language sql stable security definer set search_path = public as $$
 $$;
 revoke all on function public.ladder_counts() from public, anon, authenticated;
 grant execute on function public.ladder_counts() to anon, authenticated;
+
+-- v3 (applied 2026-11-25): anti-robot burst guard (max 20 signals per connection per 10 min), salted SHA-256 connection code
+-- (pontos.iph, never readable via the API, used only to flag possible duplicates in analysis), prompt version pontos.pv
+-- (null = v1 wording, 2 = "What helps you live well? It can be anything"). Full SQL: migration pontos_guard_v3 in Supabase.
