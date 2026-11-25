@@ -1,3 +1,2 @@
-// Supabase project for the public site. The key is the PUBLIC (publishable/anon) key: safe to publish.
-// Leave empty until the database exists; the page then shows the map read-only.
-window.TSF_SUPABASE = { url: "", key: "" };
+// Supabase project for the public site (telefone-sem-fio, sa-east-1). The key is the PUBLIC anon key: safe to publish.
+window.TSF_SUPABASE = { url: "https://cegcfczebqihiazoejen.supabase.co", key: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNlZ2NmY3plYnFpaGlhem9lamVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTU2MTU5NjAsImV4cCI6MjExMTE5MTk2MH0.R9NBJ-ytk9Rz5QbUBOxKTJiUy_KVGW7YPTQ-L98pdks" };
